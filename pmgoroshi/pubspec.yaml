@@ -1,6 +1,6 @@
 name: pmgoroshi
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -9,11 +9,46 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # 상태 관리 및 DI
+  flutter_riverpod: ^2.4.10
+  riverpod_annotation: ^2.3.4
+
+  # QR 스캔 관련
+  mobile_scanner: ^4.0.0
+
+  # 네트워크 통신
+  dio: ^5.4.0
+  retrofit: ^4.1.0
+
+  # 이미지 관련
+  image_picker: ^1.0.7
+  cached_network_image: ^3.3.1
+
+  # 유틸리티
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+  logger: ^2.0.2+1
+
+  # 권한 관리
+  permission_handler: ^11.2.0
+
+  # 라우팅
+  go_router: ^13.2.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
+  # 코드 생성
+  build_runner: ^2.4.8
+  riverpod_generator: ^2.3.10
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+  retrofit_generator: ^8.0.6
 
 flutter:
   uses-material-design: true
