@@ -16,7 +16,7 @@ _$SubmissionDataImpl _$$SubmissionDataImplFromJson(Map<String, dynamic> json) =>
       submissionTime: DateTime.parse(json['submissionTime'] as String),
       location: json['location'] as String,
       companyName: json['companyName'] as String,
-      serialNumber: json['serialNumber'] as String,
+      serialNumber: json['serialNumber'] as String?,
       violationType:
           ViolationType.fromJson(json['violationType'] as Map<String, dynamic>),
     );

@@ -6,8 +6,9 @@ import 'package:pmgoroshi/presentation/pages/data_form/data_form_state.dart';
 import 'package:pmgoroshi/data/services/api_service.dart'; // API 서비스 추가
 import 'package:pmgoroshi/data/services/location_service.dart'; // 위치 서비스 추가
 import 'package:pmgoroshi/domain/entities/violation_type.dart'; // 위반 유형 추가
-import 'package:pmgoroshi/domain/entities/company_mapping.dart'; // 업체 매핑 추가
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:pmgoroshi/data/services/supabase_service.dart'; // Supabase 서비스 추가
 
 part 'data_form_controller.g.dart';
 
@@ -176,6 +177,48 @@ class DataFormController extends _$DataFormController {
     _updateImagePaths(updatedImages);
   }
 
+  // QR 코드 데이터 파싱 함수
+  Future<(String companyName, String? serialNumber)> parseQrData(
+    String qrData,
+  ) async {
+    try {
+      final supabaseService = SupabaseService();
+      final companyMappings = await supabaseService.getCompanyMapping();
+
+      final uri = Uri.parse(qrData);
+      final host = uri.host.toLowerCase();
+
+      String companyName = '알 수 없는 업체';
+      String? serialNumber;
+
+      for (final entry in companyMappings.entries) {
+        final code = entry.key.toLowerCase();
+        if (host == code || host.contains(code)) {
+          companyName = entry.value['name'];
+
+          final qk = entry.value['qk'];
+
+          if (qk != null) {
+            if (qk == 'pathSegments') {
+              serialNumber = uri.pathSegments.last;
+            } else {
+              serialNumber = uri.queryParameters[qk];
+            }
+          } else {
+            serialNumber = uri.queryParameters.values.first;
+          }
+
+          break;
+        }
+      }
+
+      return (companyName, serialNumber);
+    } catch (e) {
+      debugPrint('QR 코드 파싱 오류: $e');
+      return ('유효하지 않은 URL', null);
+    }
+  }
+
   // 폼 제출
   Future<SubmissionData?> submitForm() async {
     // 모든 필수 필드 유효성 검사
@@ -202,14 +245,14 @@ class DataFormController extends _$DataFormController {
     }
 
     // QR 코드에서 업체명과 시리얼 번호 추출
-    final (companyName, serialNumber) = parseQrData(state.qrData);
+    final (companyName, serialNumber) = await parseQrData(state.qrData);
 
-    if (serialNumber == null) {
-      state = state.copyWith(
-        errorMessage: '유효한 시리얼 번호를 찾을 수 없습니다. QR 코드를 다시 스캔해주세요.',
-      );
-      return null;
-    }
+    // if (serialNumber == null) {
+    //   state = state.copyWith(
+    //     errorMessage: '유효한 시리얼 번호를 찾을 수 없습니다. QR 코드를 다시 스캔해주세요.',
+    //   );
+    //   return null;
+    // }
 
     // 제출 시작
     state = state.copyWith(isSubmitting: true, errorMessage: null);
@@ -248,37 +291,6 @@ class DataFormController extends _$DataFormController {
         errorMessage: '제출 중 오류가 발생했습니다: ${e.toString()}',
       );
       return null;
-    }
-  }
-
-  // QR 코드 데이터 파싱 함수
-  (String companyName, String? serialNumber) parseQrData(String qrData) {
-    try {
-      final uri = Uri.parse(qrData);
-      final host = uri.host.toLowerCase();
-
-      String companyName = '알 수 없는 업체';
-      for (final entry in companyUrls.entries) {
-        if (host == entry.key || host.contains(entry.key)) {
-          companyName = entry.value;
-          break;
-        }
-      }
-
-      String? serialNumber;
-      if (uri.queryParameters.isNotEmpty) {
-        serialNumber = uri.queryParameters.values.first;
-        if (companyName == '지빌리티(지쿠터)' && serialNumber.length > 6) {
-          serialNumber = serialNumber.substring(serialNumber.length - 6);
-        }
-        if (companyName == '카카오모빌리티(카카오)') {
-          serialNumber = uri.queryParameters['id'];
-        }
-      }
-
-      return (companyName, serialNumber);
-    } catch (e) {
-      return ('유효하지 않은 URL', null);
     }
   }
 

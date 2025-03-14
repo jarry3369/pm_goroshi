@@ -4,7 +4,6 @@ import 'package:pmgoroshi/domain/entities/violation_type.dart';
 part 'form_data.freezed.dart';
 part 'form_data.g.dart';
 
-// FormData -> SubmissionData로 이름 변경
 @freezed
 class SubmissionData with _$SubmissionData {
   const factory SubmissionData({
@@ -14,7 +13,7 @@ class SubmissionData with _$SubmissionData {
     required DateTime submissionTime,
     required String location,
     required String companyName,
-    required String serialNumber,
+    String? serialNumber,
     @JsonKey(toJson: _violationTypeToJson) required ViolationType violationType,
   }) = _SubmissionData;
 

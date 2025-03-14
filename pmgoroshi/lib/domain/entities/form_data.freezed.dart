@@ -26,7 +26,7 @@ mixin _$SubmissionData {
   DateTime get submissionTime => throw _privateConstructorUsedError;
   String get location => throw _privateConstructorUsedError;
   String get companyName => throw _privateConstructorUsedError;
-  String get serialNumber => throw _privateConstructorUsedError;
+  String? get serialNumber => throw _privateConstructorUsedError;
   @JsonKey(toJson: _violationTypeToJson)
   ViolationType get violationType => throw _privateConstructorUsedError;
 
@@ -53,7 +53,7 @@ abstract class $SubmissionDataCopyWith<$Res> {
       DateTime submissionTime,
       String location,
       String companyName,
-      String serialNumber,
+      String? serialNumber,
       @JsonKey(toJson: _violationTypeToJson) ViolationType violationType});
 
   $ViolationTypeCopyWith<$Res> get violationType;
@@ -80,7 +80,7 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
     Object? submissionTime = null,
     Object? location = null,
     Object? companyName = null,
-    Object? serialNumber = null,
+    Object? serialNumber = freezed,
     Object? violationType = null,
   }) {
     return _then(_value.copyWith(
@@ -108,10 +108,10 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
           ? _value.companyName
           : companyName // ignore: cast_nullable_to_non_nullable
               as String,
-      serialNumber: null == serialNumber
+      serialNumber: freezed == serialNumber
           ? _value.serialNumber
           : serialNumber // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       violationType: null == violationType
           ? _value.violationType
           : violationType // ignore: cast_nullable_to_non_nullable
@@ -145,7 +145,7 @@ abstract class _$$SubmissionDataImplCopyWith<$Res>
       DateTime submissionTime,
       String location,
       String companyName,
-      String serialNumber,
+      String? serialNumber,
       @JsonKey(toJson: _violationTypeToJson) ViolationType violationType});
 
   @override
@@ -171,7 +171,7 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
     Object? submissionTime = null,
     Object? location = null,
     Object? companyName = null,
-    Object? serialNumber = null,
+    Object? serialNumber = freezed,
     Object? violationType = null,
   }) {
     return _then(_$SubmissionDataImpl(
@@ -199,10 +199,10 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
           ? _value.companyName
           : companyName // ignore: cast_nullable_to_non_nullable
               as String,
-      serialNumber: null == serialNumber
+      serialNumber: freezed == serialNumber
           ? _value.serialNumber
           : serialNumber // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       violationType: null == violationType
           ? _value.violationType
           : violationType // ignore: cast_nullable_to_non_nullable
@@ -221,7 +221,7 @@ class _$SubmissionDataImpl implements _SubmissionData {
       required this.submissionTime,
       required this.location,
       required this.companyName,
-      required this.serialNumber,
+      this.serialNumber,
       @JsonKey(toJson: _violationTypeToJson) required this.violationType})
       : _imagePaths = imagePaths;
 
@@ -247,7 +247,7 @@ class _$SubmissionDataImpl implements _SubmissionData {
   @override
   final String companyName;
   @override
-  final String serialNumber;
+  final String? serialNumber;
   @override
   @JsonKey(toJson: _violationTypeToJson)
   final ViolationType violationType;
@@ -317,7 +317,7 @@ abstract class _SubmissionData implements SubmissionData {
       required final DateTime submissionTime,
       required final String location,
       required final String companyName,
-      required final String serialNumber,
+      final String? serialNumber,
       @JsonKey(toJson: _violationTypeToJson)
       required final ViolationType violationType}) = _$SubmissionDataImpl;
 
@@ -337,7 +337,7 @@ abstract class _SubmissionData implements SubmissionData {
   @override
   String get companyName;
   @override
-  String get serialNumber;
+  String? get serialNumber;
   @override
   @JsonKey(toJson: _violationTypeToJson)
   ViolationType get violationType;

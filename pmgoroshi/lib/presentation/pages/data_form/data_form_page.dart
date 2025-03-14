@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_controller.dart';
 import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/domain/entities/violation_type.dart';
-import 'package:pmgoroshi/domain/entities/company_mapping.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 // DataFormPage를 다시 ConsumerWidget으로 변경
@@ -25,7 +24,7 @@ class DataFormPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildQRDataSection(context, qrData, ref),
+              _buildQrDataCard(context, qrData, ref),
               const SizedBox(height: 24),
               LocationSection(qrData: qrData),
               const SizedBox(height: 24),
@@ -45,69 +44,82 @@ class DataFormPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildQRDataSection(
-    BuildContext context,
-    String qrData,
-    WidgetRef ref,
-  ) {
-    final controller = ref.read(dataFormControllerProvider(qrData).notifier);
-    final (companyName, serialNumber) = controller.parseQrData(qrData);
+  Widget _buildQrDataCard(BuildContext context, String qrData, WidgetRef ref) {
+    return FutureBuilder<(String, String?)>(
+      future: ref
+          .read(dataFormControllerProvider(qrData).notifier)
+          .parseQrData(qrData),
+      builder: (context, snapshot) {
+        String companyName = "로딩 중...";
+        String? serialNumber;
 
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'QR 코드 정보',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            // 업체 정보 표시
-            Row(
+        if (snapshot.hasData) {
+          (companyName, serialNumber) = snapshot.data!;
+        } else if (snapshot.hasError) {
+          companyName = "오류 발생";
+          serialNumber = null;
+        }
+
+        return Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '업체명: ',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Expanded(
-                  child: Text(
-                    companyName,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                  'QR 코드 정보',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                Text(
+                  qrData,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // 업체 정보 표시
+                Row(
+                  children: [
+                    Text(
+                      '업체명: ',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        companyName,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 시리얼 넘버 표시
+                Row(
+                  children: [
+                    Text(
+                      '시리얼 번호: ',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        serialNumber ?? '알 수 없음',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            // 시리얼 넘버 표시
-            if (serialNumber != null) ...[
-              Row(
-                children: [
-                  Text(
-                    '기기 시리얼 넘버: ',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      serialNumber,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
