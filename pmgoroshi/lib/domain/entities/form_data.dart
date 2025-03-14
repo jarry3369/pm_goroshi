@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:pmgoroshi/domain/entities/violation_type.dart';
 
 part 'form_data.freezed.dart';
 part 'form_data.g.dart';
@@ -12,6 +13,7 @@ class SubmissionData with _$SubmissionData {
     List<String>? imagePaths,
     DateTime? submissionTime,
     String? location,
+    ViolationType? violationType,
   }) = _SubmissionData;
 
   factory SubmissionData.fromJson(Map<String, dynamic> json) =>

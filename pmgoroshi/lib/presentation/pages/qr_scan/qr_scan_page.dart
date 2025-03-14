@@ -7,6 +7,7 @@ import 'package:pmgoroshi/data/services/qr_scanner_service_impl.dart';
 import 'package:pmgoroshi/presentation/pages/qr_scan/qr_scan_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pmgoroshi/core/permissions/permission_handler.dart';
+import 'package:pmgoroshi/data/services/location_service.dart';
 
 class QRScanPage extends ConsumerStatefulWidget {
   const QRScanPage({super.key});
@@ -23,7 +24,7 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     WidgetsBinding.instance.addObserver(this);
 
     // 권한 체크 후 스캐너 초기화
-    _checkPermissionAndInitialize();
+    _checkPermissionsAndInitialize();
   }
 
   @override
@@ -36,17 +37,29 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // 앱이 백그라운드에서 포그라운드로 돌아올 때 스캐너 재시작
     if (state == AppLifecycleState.resumed) {
-      _checkPermissionAndInitialize();
+      _checkPermissionsAndInitialize();
     }
   }
 
-  Future<void> _checkPermissionAndInitialize() async {
+  Future<void> _checkPermissionsAndInitialize() async {
     final permissionHandler = ref.read(permissionHandlerProvider);
-    final hasPermission = await permissionHandler.checkPermission(
+
+    // 카메라 권한 확인
+    final hasCameraPermission = await permissionHandler.checkPermission(
       Permission.camera,
     );
 
-    if (hasPermission) {
+    // 위치 권한도 함께 확인
+    final hasLocationPermission = await permissionHandler.checkPermission(
+      Permission.location,
+    );
+
+    // 위치 권한이 없으면 요청
+    if (!hasLocationPermission) {
+      await permissionHandler.requestLocationPermission();
+    }
+
+    if (hasCameraPermission) {
       // 권한이 있을 경우 스캐너 초기화
       ref.read(qRScanControllerProvider.notifier).initialize();
     }
@@ -142,7 +155,7 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
                 ElevatedButton(
                   onPressed: () async {
                     await openAppSettings();
-                    _checkPermissionAndInitialize();
+                    _checkPermissionsAndInitialize();
                   },
                   child: const Text('권한 설정하기'),
                 ),

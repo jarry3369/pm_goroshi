@@ -17,6 +17,10 @@ _$SubmissionDataImpl _$$SubmissionDataImplFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['submissionTime'] as String),
       location: json['location'] as String?,
+      violationType: json['violationType'] == null
+          ? null
+          : ViolationType.fromJson(
+              json['violationType'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$SubmissionDataImplToJson(
@@ -27,4 +31,5 @@ Map<String, dynamic> _$$SubmissionDataImplToJson(
       'imagePaths': instance.imagePaths,
       'submissionTime': instance.submissionTime?.toIso8601String(),
       'location': instance.location,
+      'violationType': instance.violationType,
     };

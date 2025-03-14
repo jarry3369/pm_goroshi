@@ -10,7 +10,7 @@ abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
   @POST("/submit-data")
-  Future<Map<String, dynamic>> submitFormData(@Body() FormData formData);
+  Future<dynamic> submitFormData(@Body() SubmissionData submissionData);
 }
 
 @riverpod

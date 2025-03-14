@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:pmgoroshi/domain/entities/form_data.dart';
+import 'package:pmgoroshi/domain/entities/violation_type.dart';
+import 'package:geolocator/geolocator.dart';
 
 part 'data_form_state.freezed.dart';
 
@@ -13,6 +15,9 @@ class DataFormState with _$DataFormState {
     @Default(false) bool isSuccess,
     String? errorMessage,
     String? location,
+    Position? position,
+    ViolationType? violationType,
+    @Default(false) bool isLocationLoading,
   }) = _DataFormState;
 
   factory DataFormState.initial(String qrData) =>

@@ -23,6 +23,9 @@ mixin _$DataFormState {
   bool get isSuccess => throw _privateConstructorUsedError;
   String? get errorMessage => throw _privateConstructorUsedError;
   String? get location => throw _privateConstructorUsedError;
+  Position? get position => throw _privateConstructorUsedError;
+  ViolationType? get violationType => throw _privateConstructorUsedError;
+  bool get isLocationLoading => throw _privateConstructorUsedError;
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.
@@ -44,7 +47,12 @@ abstract class $DataFormStateCopyWith<$Res> {
       bool isSubmitting,
       bool isSuccess,
       String? errorMessage,
-      String? location});
+      String? location,
+      Position? position,
+      ViolationType? violationType,
+      bool isLocationLoading});
+
+  $ViolationTypeCopyWith<$Res>? get violationType;
 }
 
 /// @nodoc
@@ -69,6 +77,9 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
     Object? isSuccess = null,
     Object? errorMessage = freezed,
     Object? location = freezed,
+    Object? position = freezed,
+    Object? violationType = freezed,
+    Object? isLocationLoading = null,
   }) {
     return _then(_value.copyWith(
       qrData: null == qrData
@@ -99,7 +110,33 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String?,
+      position: freezed == position
+          ? _value.position
+          : position // ignore: cast_nullable_to_non_nullable
+              as Position?,
+      violationType: freezed == violationType
+          ? _value.violationType
+          : violationType // ignore: cast_nullable_to_non_nullable
+              as ViolationType?,
+      isLocationLoading: null == isLocationLoading
+          ? _value.isLocationLoading
+          : isLocationLoading // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
+  }
+
+  /// Create a copy of DataFormState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ViolationTypeCopyWith<$Res>? get violationType {
+    if (_value.violationType == null) {
+      return null;
+    }
+
+    return $ViolationTypeCopyWith<$Res>(_value.violationType!, (value) {
+      return _then(_value.copyWith(violationType: value) as $Val);
+    });
   }
 }
 
@@ -118,7 +155,13 @@ abstract class _$$DataFormStateImplCopyWith<$Res>
       bool isSubmitting,
       bool isSuccess,
       String? errorMessage,
-      String? location});
+      String? location,
+      Position? position,
+      ViolationType? violationType,
+      bool isLocationLoading});
+
+  @override
+  $ViolationTypeCopyWith<$Res>? get violationType;
 }
 
 /// @nodoc
@@ -141,6 +184,9 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
     Object? isSuccess = null,
     Object? errorMessage = freezed,
     Object? location = freezed,
+    Object? position = freezed,
+    Object? violationType = freezed,
+    Object? isLocationLoading = null,
   }) {
     return _then(_$DataFormStateImpl(
       qrData: null == qrData
@@ -171,6 +217,18 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String?,
+      position: freezed == position
+          ? _value.position
+          : position // ignore: cast_nullable_to_non_nullable
+              as Position?,
+      violationType: freezed == violationType
+          ? _value.violationType
+          : violationType // ignore: cast_nullable_to_non_nullable
+              as ViolationType?,
+      isLocationLoading: null == isLocationLoading
+          ? _value.isLocationLoading
+          : isLocationLoading // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -185,7 +243,10 @@ class _$DataFormStateImpl implements _DataFormState {
       this.isSubmitting = false,
       this.isSuccess = false,
       this.errorMessage,
-      this.location})
+      this.location,
+      this.position,
+      this.violationType,
+      this.isLocationLoading = false})
       : _imagePaths = imagePaths;
 
   @override
@@ -211,10 +272,17 @@ class _$DataFormStateImpl implements _DataFormState {
   final String? errorMessage;
   @override
   final String? location;
+  @override
+  final Position? position;
+  @override
+  final ViolationType? violationType;
+  @override
+  @JsonKey()
+  final bool isLocationLoading;
 
   @override
   String toString() {
-    return 'DataFormState(qrData: $qrData, description: $description, imagePaths: $imagePaths, isSubmitting: $isSubmitting, isSuccess: $isSuccess, errorMessage: $errorMessage, location: $location)';
+    return 'DataFormState(qrData: $qrData, description: $description, imagePaths: $imagePaths, isSubmitting: $isSubmitting, isSuccess: $isSuccess, errorMessage: $errorMessage, location: $location, position: $position, violationType: $violationType, isLocationLoading: $isLocationLoading)';
   }
 
   @override
@@ -234,7 +302,13 @@ class _$DataFormStateImpl implements _DataFormState {
             (identical(other.errorMessage, errorMessage) ||
                 other.errorMessage == errorMessage) &&
             (identical(other.location, location) ||
-                other.location == location));
+                other.location == location) &&
+            (identical(other.position, position) ||
+                other.position == position) &&
+            (identical(other.violationType, violationType) ||
+                other.violationType == violationType) &&
+            (identical(other.isLocationLoading, isLocationLoading) ||
+                other.isLocationLoading == isLocationLoading));
   }
 
   @override
@@ -246,7 +320,10 @@ class _$DataFormStateImpl implements _DataFormState {
       isSubmitting,
       isSuccess,
       errorMessage,
-      location);
+      location,
+      position,
+      violationType,
+      isLocationLoading);
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.
@@ -265,7 +342,10 @@ abstract class _DataFormState implements DataFormState {
       final bool isSubmitting,
       final bool isSuccess,
       final String? errorMessage,
-      final String? location}) = _$DataFormStateImpl;
+      final String? location,
+      final Position? position,
+      final ViolationType? violationType,
+      final bool isLocationLoading}) = _$DataFormStateImpl;
 
   @override
   String get qrData;
@@ -281,6 +361,12 @@ abstract class _DataFormState implements DataFormState {
   String? get errorMessage;
   @override
   String? get location;
+  @override
+  Position? get position;
+  @override
+  ViolationType? get violationType;
+  @override
+  bool get isLocationLoading;
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.

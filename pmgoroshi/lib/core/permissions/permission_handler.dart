@@ -31,6 +31,17 @@ class AppPermissionHandler {
   Future<bool> checkPermission(Permission permission) async {
     return await permission.isGranted;
   }
+
+  /// 앱 시작 시 위치 권한 요청
+  Future<void> requestInitialLocationPermission() async {
+    // 위치 권한 확인
+    final status = await Permission.location.status;
+
+    // 권한이 없는 경우에만 요청
+    if (status.isDenied) {
+      await Permission.location.request();
+    }
+  }
 }
 
 @riverpod

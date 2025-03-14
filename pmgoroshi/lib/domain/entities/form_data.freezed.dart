@@ -25,6 +25,7 @@ mixin _$SubmissionData {
   List<String>? get imagePaths => throw _privateConstructorUsedError;
   DateTime? get submissionTime => throw _privateConstructorUsedError;
   String? get location => throw _privateConstructorUsedError;
+  ViolationType? get violationType => throw _privateConstructorUsedError;
 
   /// Serializes this SubmissionData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -47,7 +48,10 @@ abstract class $SubmissionDataCopyWith<$Res> {
       String description,
       List<String>? imagePaths,
       DateTime? submissionTime,
-      String? location});
+      String? location,
+      ViolationType? violationType});
+
+  $ViolationTypeCopyWith<$Res>? get violationType;
 }
 
 /// @nodoc
@@ -70,6 +74,7 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
     Object? imagePaths = freezed,
     Object? submissionTime = freezed,
     Object? location = freezed,
+    Object? violationType = freezed,
   }) {
     return _then(_value.copyWith(
       qrData: null == qrData
@@ -92,7 +97,25 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String?,
+      violationType: freezed == violationType
+          ? _value.violationType
+          : violationType // ignore: cast_nullable_to_non_nullable
+              as ViolationType?,
     ) as $Val);
+  }
+
+  /// Create a copy of SubmissionData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ViolationTypeCopyWith<$Res>? get violationType {
+    if (_value.violationType == null) {
+      return null;
+    }
+
+    return $ViolationTypeCopyWith<$Res>(_value.violationType!, (value) {
+      return _then(_value.copyWith(violationType: value) as $Val);
+    });
   }
 }
 
@@ -109,7 +132,11 @@ abstract class _$$SubmissionDataImplCopyWith<$Res>
       String description,
       List<String>? imagePaths,
       DateTime? submissionTime,
-      String? location});
+      String? location,
+      ViolationType? violationType});
+
+  @override
+  $ViolationTypeCopyWith<$Res>? get violationType;
 }
 
 /// @nodoc
@@ -130,6 +157,7 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
     Object? imagePaths = freezed,
     Object? submissionTime = freezed,
     Object? location = freezed,
+    Object? violationType = freezed,
   }) {
     return _then(_$SubmissionDataImpl(
       qrData: null == qrData
@@ -152,6 +180,10 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String?,
+      violationType: freezed == violationType
+          ? _value.violationType
+          : violationType // ignore: cast_nullable_to_non_nullable
+              as ViolationType?,
     ));
   }
 }
@@ -164,7 +196,8 @@ class _$SubmissionDataImpl implements _SubmissionData {
       required this.description,
       final List<String>? imagePaths,
       this.submissionTime,
-      this.location})
+      this.location,
+      this.violationType})
       : _imagePaths = imagePaths;
 
   factory _$SubmissionDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -188,10 +221,12 @@ class _$SubmissionDataImpl implements _SubmissionData {
   final DateTime? submissionTime;
   @override
   final String? location;
+  @override
+  final ViolationType? violationType;
 
   @override
   String toString() {
-    return 'SubmissionData(qrData: $qrData, description: $description, imagePaths: $imagePaths, submissionTime: $submissionTime, location: $location)';
+    return 'SubmissionData(qrData: $qrData, description: $description, imagePaths: $imagePaths, submissionTime: $submissionTime, location: $location, violationType: $violationType)';
   }
 
   @override
@@ -207,7 +242,9 @@ class _$SubmissionDataImpl implements _SubmissionData {
             (identical(other.submissionTime, submissionTime) ||
                 other.submissionTime == submissionTime) &&
             (identical(other.location, location) ||
-                other.location == location));
+                other.location == location) &&
+            (identical(other.violationType, violationType) ||
+                other.violationType == violationType));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -218,7 +255,8 @@ class _$SubmissionDataImpl implements _SubmissionData {
       description,
       const DeepCollectionEquality().hash(_imagePaths),
       submissionTime,
-      location);
+      location,
+      violationType);
 
   /// Create a copy of SubmissionData
   /// with the given fields replaced by the non-null parameter values.
@@ -243,7 +281,8 @@ abstract class _SubmissionData implements SubmissionData {
       required final String description,
       final List<String>? imagePaths,
       final DateTime? submissionTime,
-      final String? location}) = _$SubmissionDataImpl;
+      final String? location,
+      final ViolationType? violationType}) = _$SubmissionDataImpl;
 
   factory _SubmissionData.fromJson(Map<String, dynamic> json) =
       _$SubmissionDataImpl.fromJson;
@@ -258,6 +297,8 @@ abstract class _SubmissionData implements SubmissionData {
   DateTime? get submissionTime;
   @override
   String? get location;
+  @override
+  ViolationType? get violationType;
 
   /// Create a copy of SubmissionData
   /// with the given fields replaced by the non-null parameter values.

@@ -4,6 +4,9 @@ import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/data/services/image_picker_service_impl.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_state.dart';
 import 'package:pmgoroshi/data/services/api_service.dart'; // API 서비스 추가
+import 'package:pmgoroshi/data/services/location_service.dart'; // 위치 서비스 추가
+import 'package:pmgoroshi/domain/entities/violation_type.dart'; // 위반 유형 추가
+import 'package:geolocator/geolocator.dart';
 
 part 'data_form_controller.g.dart';
 
@@ -11,12 +14,60 @@ part 'data_form_controller.g.dart';
 class DataFormController extends _$DataFormController {
   @override
   DataFormState build(String initialQrData) {
-    return DataFormState.initial(initialQrData);
+    // 컨트롤러 초기화 시 위치 정보 가져오기
+    // 상태를 먼저 반환하고 비동기로 위치 정보를 가져옴
+    final initialState = DataFormState.initial(initialQrData);
+
+    // 위치 정보 로딩 상태로 설정
+    state = initialState.copyWith(isLocationLoading: true);
+
+    // 비동기로 위치 정보 가져오기
+    _fetchCurrentLocation();
+
+    return initialState.copyWith(isLocationLoading: true);
   }
 
   // 설명 업데이트
   void updateDescription(String description) {
     state = state.copyWith(description: description);
+  }
+
+  // 위반 유형 업데이트
+  void updateViolationType(ViolationType violationType) {
+    state = state.copyWith(violationType: violationType);
+  }
+
+  // 현재 위치 가져오기
+  Future<void> _fetchCurrentLocation() async {
+    try {
+      final locationService = ref.read(locationServiceProvider);
+      final position = await locationService.getCurrentPosition();
+
+      if (position != null) {
+        final address = await locationService.getFormattedAddress(position);
+        state = state.copyWith(
+          position: position,
+          location: address,
+          isLocationLoading: false,
+        );
+      } else {
+        state = state.copyWith(
+          isLocationLoading: false,
+          errorMessage: '위치 정보를 가져올 수 없습니다. 위치 권한을 확인해주세요.',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLocationLoading: false,
+        errorMessage: '위치 정보를 가져오는 중 오류가 발생했습니다: ${e.toString()}',
+      );
+    }
+  }
+
+  // 위치 정보 새로고침
+  Future<void> refreshLocation() async {
+    state = state.copyWith(isLocationLoading: true, errorMessage: null);
+    await _fetchCurrentLocation();
   }
 
   // 갤러리에서 이미지 선택
@@ -55,6 +106,11 @@ class DataFormController extends _$DataFormController {
       return null;
     }
 
+    if (state.violationType == null) {
+      state = state.copyWith(errorMessage: '위반 유형을 선택해주세요');
+      return null;
+    }
+
     // 제출 시작
     state = state.copyWith(isSubmitting: true, errorMessage: null);
 
@@ -66,6 +122,7 @@ class DataFormController extends _$DataFormController {
         imagePaths: state.imagePaths.isEmpty ? null : state.imagePaths,
         submissionTime: DateTime.now(),
         location: state.location,
+        violationType: state.violationType,
       );
 
       // API 서비스를 통한 실제 서버 통신
@@ -95,5 +152,6 @@ class DataFormController extends _$DataFormController {
   // 폼 초기화
   void resetForm() {
     state = DataFormState.initial(state.qrData);
+    _fetchCurrentLocation();
   }
 }
