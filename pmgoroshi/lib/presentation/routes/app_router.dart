@@ -24,7 +24,14 @@ GoRouter appRouter(AppRouterRef ref) {
         path: '/completion',
         builder: (context, state) {
           final data = state.extra as Map<String, dynamic>?;
-          return CompletionPage(data: data ?? {});
+          return CompletionPage(
+            isSuccess: data?['isSuccess'] == true,
+            errorMessage: data?['errorMessage'] as String?,
+            submissionTime:
+                data?['submissionTime'] != null
+                    ? DateTime.parse(data!['submissionTime'] as String)
+                    : DateTime.now(),
+          );
         },
       ),
     ],

@@ -220,39 +220,37 @@ class DataFormController extends _$DataFormController {
   }
 
   // 폼 제출
-  Future<SubmissionData?> submitForm() async {
+  Future<({bool isSuccess, SubmissionData? data, String? errorMessage})>
+  submitForm() async {
+    // 이미 제출 중이면 중복 요청 방지
+    if (state.isSubmitting) {
+      return (isSuccess: false, data: null, errorMessage: '이미 제출 중입니다.');
+    }
+
     // 모든 필수 필드 유효성 검사
     if (state.description.isEmpty) {
       state = state.copyWith(errorMessage: '설명을 입력해주세요');
-      return null;
+      throw state;
     }
 
     if (state.violationType == null) {
       state = state.copyWith(errorMessage: '위반 유형을 선택해주세요');
-      return null;
+      throw state;
     }
 
     if (state.location == null || state.position == null) {
-      state = state.copyWith(
-        errorMessage: '위치 정보를 가져오는데 실패했습니다. 위치 정보를 새로고침해주세요.',
-      );
-      return null;
+      final errorMsg = '위치 정보를 가져오는데 실패했습니다. 위치 정보를 새로고침해주세요.';
+      state = state.copyWith(errorMessage: errorMsg);
+      throw state;
     }
 
     if (state.imagePaths.isEmpty) {
       state = state.copyWith(errorMessage: '최소 한 장 이상의 사진을 첨부해주세요');
-      return null;
+      throw state;
     }
 
     // QR 코드에서 업체명과 시리얼 번호 추출
     final (companyName, serialNumber) = await parseQrData(state.qrData);
-
-    // if (serialNumber == null) {
-    //   state = state.copyWith(
-    //     errorMessage: '유효한 시리얼 번호를 찾을 수 없습니다. QR 코드를 다시 스캔해주세요.',
-    //   );
-    //   return null;
-    // }
 
     // 제출 시작
     state = state.copyWith(isSubmitting: true, errorMessage: null);
@@ -270,27 +268,55 @@ class DataFormController extends _$DataFormController {
         serialNumber: serialNumber,
       );
 
-      // API 서비스를 통한 실제 서버 통신
-      // 실제 서버가 없으므로 주석 처리된 코드
-      /*
-      final apiService = ref.read(apiServiceProvider);
-      final response = await apiService.submitFormData(submissionData);
-      */
+      // Supabase 서비스 생성
+      final supabaseService = SupabaseService();
 
-      // 개발 중에는 딜레이로 API 호출 시뮬레이션
-      await Future.delayed(const Duration(seconds: 1));
+      // 이미지 업로드
+      if (state.imagePaths.isNotEmpty) {
+        try {
+          final uploadedImageUrls = await supabaseService.uploadImages(
+            state.imagePaths,
+          );
 
-      // 제출 성공
-      state = state.copyWith(isSubmitting: false, isSuccess: true);
+          // 업로드된 이미지 URL로 업데이트된 데이터 생성
+          final updatedData = SubmissionData(
+            qrData: submissionData.qrData,
+            description: submissionData.description,
+            imagePaths: uploadedImageUrls, // 업로드된 URL로 업데이트
+            submissionTime: submissionData.submissionTime,
+            location: submissionData.location,
+            violationType: submissionData.violationType,
+            companyName: submissionData.companyName,
+            serialNumber: submissionData.serialNumber,
+          );
 
-      return submissionData;
+          // Supabase에 데이터 저장
+          await supabaseService.saveReportData(updatedData);
+
+          // 제출 성공
+          state = state.copyWith(isSubmitting: false, isSuccess: true);
+
+          return (isSuccess: true, data: updatedData, errorMessage: null);
+        } catch (e) {
+          // 업로드 실패
+          final errorMsg = '업로드 중 오류가 발생했습니다: ${e.toString()}';
+          state = state.copyWith(isSubmitting: false, errorMessage: errorMsg);
+          return (isSuccess: false, data: null, errorMessage: errorMsg);
+        }
+      } else {
+        // 이미지가 없는 경우 (이미 위에서 체크하므로 여기로 오지 않음)
+        await supabaseService.saveReportData(submissionData);
+
+        // 제출 성공
+        state = state.copyWith(isSubmitting: false, isSuccess: true);
+
+        return (isSuccess: true, data: submissionData, errorMessage: null);
+      }
     } catch (e) {
       // 제출 실패
-      state = state.copyWith(
-        isSubmitting: false,
-        errorMessage: '제출 중 오류가 발생했습니다: ${e.toString()}',
-      );
-      return null;
+      final errorMsg = '제출 중 오류가 발생했습니다: ${e.toString()}';
+      state = state.copyWith(isSubmitting: false, errorMessage: errorMsg);
+      return (isSuccess: false, data: null, errorMessage: errorMsg);
     }
   }
 

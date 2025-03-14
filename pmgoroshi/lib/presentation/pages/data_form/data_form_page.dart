@@ -499,28 +499,34 @@ class SubmitButtonSection extends ConsumerWidget {
     );
     final controller = ref.read(dataFormControllerProvider(qrData).notifier);
 
-    // 제출 성공 시 완료 화면으로 이동
-    ref.listen(dataFormControllerProvider(qrData).select((s) => s.isSuccess), (
-      previous,
-      isSuccess,
-    ) {
-      if (isSuccess && previous == false) {
-        // 컨트롤러에서 submissionData가 이미 생성되었으므로
-        // 결과 페이지로 이동만 수행합니다.
-        final submissionData = controller.submitForm();
-        submissionData.then((data) {
-          if (data != null) {
-            context.go('/completion', extra: data.toJson());
-          }
-        });
-      }
-    });
+    // 성공한 경우만 듣도록 하는 리스너는 더이상 필요 없음
+    // 제출 버튼으로 직접 이동 로직을 처리함
 
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: state.isSubmitting ? null : () => controller.submitForm(),
+        onPressed:
+            state.isSubmitting
+                ? null
+                : () async {
+                  // 제출 함수 직접 호출 후 결과에 따라 처리
+                  final result = await controller.submitForm();
+
+                  if (context.mounted) {
+                    // 성공/실패 여부와 상관없이 Completion 페이지로 이동
+                    context.go(
+                      '/completion',
+                      extra: {
+                        'isSuccess': result.isSuccess,
+                        'errorMessage': result.errorMessage,
+                        'submissionTime':
+                            result.data?.submissionTime.toIso8601String() ??
+                            DateTime.now().toIso8601String(),
+                      },
+                    );
+                  }
+                },
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).primaryColor,
           foregroundColor: Colors.white,
