@@ -20,7 +20,7 @@ ViolationType _$ViolationTypeFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ViolationType {
-  int get id => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
 
   /// Serializes this ViolationType to a JSON map.
@@ -39,7 +39,7 @@ abstract class $ViolationTypeCopyWith<$Res> {
           ViolationType value, $Res Function(ViolationType) then) =
       _$ViolationTypeCopyWithImpl<$Res, ViolationType>;
   @useResult
-  $Res call({int id, String name});
+  $Res call({String id, String name});
 }
 
 /// @nodoc
@@ -64,7 +64,7 @@ class _$ViolationTypeCopyWithImpl<$Res, $Val extends ViolationType>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as int,
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -81,7 +81,7 @@ abstract class _$$ViolationTypeImplCopyWith<$Res>
       __$$ViolationTypeImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int id, String name});
+  $Res call({String id, String name});
 }
 
 /// @nodoc
@@ -104,7 +104,7 @@ class __$$ViolationTypeImplCopyWithImpl<$Res>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as int,
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -122,7 +122,7 @@ class _$ViolationTypeImpl implements _ViolationType {
       _$$ViolationTypeImplFromJson(json);
 
   @override
-  final int id;
+  final String id;
   @override
   final String name;
 
@@ -162,14 +162,14 @@ class _$ViolationTypeImpl implements _ViolationType {
 
 abstract class _ViolationType implements ViolationType {
   const factory _ViolationType(
-      {required final int id,
+      {required final String id,
       required final String name}) = _$ViolationTypeImpl;
 
   factory _ViolationType.fromJson(Map<String, dynamic> json) =
       _$ViolationTypeImpl.fromJson;
 
   @override
-  int get id;
+  String get id;
   @override
   String get name;
 

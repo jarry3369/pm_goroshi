@@ -6,6 +6,7 @@ import 'package:pmgoroshi/presentation/pages/data_form/data_form_state.dart';
 import 'package:pmgoroshi/data/services/api_service.dart'; // API 서비스 추가
 import 'package:pmgoroshi/data/services/location_service.dart'; // 위치 서비스 추가
 import 'package:pmgoroshi/domain/entities/violation_type.dart'; // 위반 유형 추가
+import 'package:pmgoroshi/domain/entities/company_mapping.dart'; // 업체 매핑 추가
 import 'package:geolocator/geolocator.dart';
 
 part 'data_form_controller.g.dart';
@@ -177,6 +178,7 @@ class DataFormController extends _$DataFormController {
 
   // 폼 제출
   Future<SubmissionData?> submitForm() async {
+    // 모든 필수 필드 유효성 검사
     if (state.description.isEmpty) {
       state = state.copyWith(errorMessage: '설명을 입력해주세요');
       return null;
@@ -184,6 +186,28 @@ class DataFormController extends _$DataFormController {
 
     if (state.violationType == null) {
       state = state.copyWith(errorMessage: '위반 유형을 선택해주세요');
+      return null;
+    }
+
+    if (state.location == null || state.position == null) {
+      state = state.copyWith(
+        errorMessage: '위치 정보를 가져오는데 실패했습니다. 위치 정보를 새로고침해주세요.',
+      );
+      return null;
+    }
+
+    if (state.imagePaths.isEmpty) {
+      state = state.copyWith(errorMessage: '최소 한 장 이상의 사진을 첨부해주세요');
+      return null;
+    }
+
+    // QR 코드에서 업체명과 시리얼 번호 추출
+    final (companyName, serialNumber) = parseQrData(state.qrData);
+
+    if (serialNumber == null) {
+      state = state.copyWith(
+        errorMessage: '유효한 시리얼 번호를 찾을 수 없습니다. QR 코드를 다시 스캔해주세요.',
+      );
       return null;
     }
 
@@ -195,10 +219,12 @@ class DataFormController extends _$DataFormController {
       final submissionData = SubmissionData(
         qrData: state.qrData,
         description: state.description,
-        imagePaths: state.imagePaths.isEmpty ? null : state.imagePaths,
+        imagePaths: state.imagePaths,
         submissionTime: DateTime.now(),
-        location: state.location,
-        violationType: state.violationType,
+        location: state.location!,
+        violationType: state.violationType!,
+        companyName: companyName,
+        serialNumber: serialNumber,
       );
 
       // API 서비스를 통한 실제 서버 통신
@@ -219,9 +245,40 @@ class DataFormController extends _$DataFormController {
       // 제출 실패
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: '데이터 제출에 실패했습니다. 다시 시도해주세요.',
+        errorMessage: '제출 중 오류가 발생했습니다: ${e.toString()}',
       );
       return null;
+    }
+  }
+
+  // QR 코드 데이터 파싱 함수
+  (String companyName, String? serialNumber) parseQrData(String qrData) {
+    try {
+      final uri = Uri.parse(qrData);
+      final host = uri.host.toLowerCase();
+
+      String companyName = '알 수 없는 업체';
+      for (final entry in companyUrls.entries) {
+        if (host == entry.key || host.contains(entry.key)) {
+          companyName = entry.value;
+          break;
+        }
+      }
+
+      String? serialNumber;
+      if (uri.queryParameters.isNotEmpty) {
+        serialNumber = uri.queryParameters.values.first;
+        if (companyName == '지빌리티(지쿠터)' && serialNumber.length > 6) {
+          serialNumber = serialNumber.substring(serialNumber.length - 6);
+        }
+        if (companyName == '카카오모빌리티(카카오)') {
+          serialNumber = uri.queryParameters['id'];
+        }
+      }
+
+      return (companyName, serialNumber);
+    } catch (e) {
+      return ('유효하지 않은 URL', null);
     }
   }
 

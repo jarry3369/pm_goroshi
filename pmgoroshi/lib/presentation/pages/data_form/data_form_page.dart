@@ -6,21 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_controller.dart';
 import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/domain/entities/violation_type.dart';
+import 'package:pmgoroshi/domain/entities/company_mapping.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-
-// 업체 URL 및 이름 매핑 정보
-final Map<String, String> companyUrls = {
-  'qrcode.theswing.co.kr': '더스윙(스윙)',
-  'hbe.kr': '피유엠피(씽씽)',
-  'open.gbike.io': '지빌리티(지쿠터)',
-  'kickgoing.io': '울룰로(킥고잉)',
-  'app.hikick.kr': '오렌지랩(하이킥)',
-  'dartsharing.com': '다트쉐어링(다트)',
-  'ride.bird.co': '버드코리아(버드)',
-  'deering.co': '디어코퍼레이션(디어)',
-  'deeplink.ridebeam.com': '빔모빌리티(빔)',
-  'matrix.elecle.bike': '일레클',
-};
 
 // DataFormPage를 다시 ConsumerWidget으로 변경
 class DataFormPage extends ConsumerWidget {
@@ -38,7 +25,7 @@ class DataFormPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildQRDataSection(context, qrData),
+              _buildQRDataSection(context, qrData, ref),
               const SizedBox(height: 24),
               LocationSection(qrData: qrData),
               const SizedBox(height: 24),
@@ -58,35 +45,13 @@ class DataFormPage extends ConsumerWidget {
     );
   }
 
-  (String company, String? firstParam) getCompanyAndFirstParam(String url) {
-    try {
-      final uri = Uri.parse(url);
-      final host = uri.host.toLowerCase();
-
-      String companyName = '알 수 없는 업체';
-      for (final entry in companyUrls.entries) {
-        if (host == entry.key || host.contains(entry.key)) {
-          companyName = entry.value;
-          break;
-        }
-      }
-
-      String? firstParam;
-      if (uri.queryParameters.isNotEmpty) {
-        firstParam = uri.queryParameters.values.first;
-        if (companyName == '지빌리티(지쿠터)' && firstParam.length > 6) {
-          firstParam = firstParam.substring(firstParam.length - 6);
-        }
-      }
-
-      return (companyName, firstParam);
-    } catch (e) {
-      return ('유효하지 않은 URL', null);
-    }
-  }
-
-  Widget _buildQRDataSection(BuildContext context, String qrData) {
-    final (companyName, serialNumber) = getCompanyAndFirstParam(qrData);
+  Widget _buildQRDataSection(
+    BuildContext context,
+    String qrData,
+    WidgetRef ref,
+  ) {
+    final controller = ref.read(dataFormControllerProvider(qrData).notifier);
+    final (companyName, serialNumber) = controller.parseQrData(qrData);
 
     return Card(
       elevation: 2,
@@ -319,11 +284,11 @@ class ViolationTypeSection extends ConsumerWidget {
               value: state,
               isExpanded: true,
               items:
-                  violationTypes.map((type) {
+                  violationTypes.asMap().entries.map((e) {
                     return DropdownMenuItem<ViolationType>(
-                      value: type,
+                      value: e.value,
                       child: Text(
-                        '${type.id}. ${type.name}',
+                        '${e.key + 1}. ${e.value.name}',
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -528,17 +493,14 @@ class SubmitButtonSection extends ConsumerWidget {
       isSuccess,
     ) {
       if (isSuccess && previous == false) {
-        final fullState = ref.read(dataFormControllerProvider(qrData));
-        final submissionData = SubmissionData(
-          qrData: fullState.qrData,
-          description: fullState.description,
-          imagePaths: fullState.imagePaths,
-          submissionTime: DateTime.now(),
-          location: fullState.location,
-          violationType: fullState.violationType,
-        );
-
-        context.go('/completion', extra: submissionData.toJson());
+        // 컨트롤러에서 submissionData가 이미 생성되었으므로
+        // 결과 페이지로 이동만 수행합니다.
+        final submissionData = controller.submitForm();
+        submissionData.then((data) {
+          if (data != null) {
+            context.go('/completion', extra: data.toJson());
+          }
+        });
       }
     });
 

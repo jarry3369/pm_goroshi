@@ -10,17 +10,15 @@ _$SubmissionDataImpl _$$SubmissionDataImplFromJson(Map<String, dynamic> json) =>
     _$SubmissionDataImpl(
       qrData: json['qrData'] as String,
       description: json['description'] as String,
-      imagePaths: (json['imagePaths'] as List<dynamic>?)
-          ?.map((e) => e as String)
+      imagePaths: (json['imagePaths'] as List<dynamic>)
+          .map((e) => e as String)
           .toList(),
-      submissionTime: json['submissionTime'] == null
-          ? null
-          : DateTime.parse(json['submissionTime'] as String),
-      location: json['location'] as String?,
-      violationType: json['violationType'] == null
-          ? null
-          : ViolationType.fromJson(
-              json['violationType'] as Map<String, dynamic>),
+      submissionTime: DateTime.parse(json['submissionTime'] as String),
+      location: json['location'] as String,
+      companyName: json['companyName'] as String,
+      serialNumber: json['serialNumber'] as String,
+      violationType:
+          ViolationType.fromJson(json['violationType'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$SubmissionDataImplToJson(
@@ -29,7 +27,9 @@ Map<String, dynamic> _$$SubmissionDataImplToJson(
       'qrData': instance.qrData,
       'description': instance.description,
       'imagePaths': instance.imagePaths,
-      'submissionTime': instance.submissionTime?.toIso8601String(),
+      'submissionTime': instance.submissionTime.toIso8601String(),
       'location': instance.location,
-      'violationType': instance.violationType,
+      'companyName': instance.companyName,
+      'serialNumber': instance.serialNumber,
+      'violationType': _violationTypeToJson(instance.violationType),
     };

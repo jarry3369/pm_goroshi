@@ -8,7 +8,7 @@ part of 'violation_type.dart';
 
 _$ViolationTypeImpl _$$ViolationTypeImplFromJson(Map<String, dynamic> json) =>
     _$ViolationTypeImpl(
-      id: (json['id'] as num).toInt(),
+      id: json['id'] as String,
       name: json['name'] as String,
     );
 

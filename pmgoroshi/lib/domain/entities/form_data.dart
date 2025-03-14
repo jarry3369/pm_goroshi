@@ -10,12 +10,19 @@ class SubmissionData with _$SubmissionData {
   const factory SubmissionData({
     required String qrData,
     required String description,
-    List<String>? imagePaths,
-    DateTime? submissionTime,
-    String? location,
-    ViolationType? violationType,
+    required List<String> imagePaths,
+    required DateTime submissionTime,
+    required String location,
+    required String companyName,
+    required String serialNumber,
+    @JsonKey(toJson: _violationTypeToJson) required ViolationType violationType,
   }) = _SubmissionData;
 
   factory SubmissionData.fromJson(Map<String, dynamic> json) =>
       _$SubmissionDataFromJson(json);
+}
+
+// violationType의 toJson을 처리하는 helper 함수
+Map<String, dynamic>? _violationTypeToJson(ViolationType? violationType) {
+  return violationType?.toJson();
 }

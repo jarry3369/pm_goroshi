@@ -22,10 +22,13 @@ SubmissionData _$SubmissionDataFromJson(Map<String, dynamic> json) {
 mixin _$SubmissionData {
   String get qrData => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
-  List<String>? get imagePaths => throw _privateConstructorUsedError;
-  DateTime? get submissionTime => throw _privateConstructorUsedError;
-  String? get location => throw _privateConstructorUsedError;
-  ViolationType? get violationType => throw _privateConstructorUsedError;
+  List<String> get imagePaths => throw _privateConstructorUsedError;
+  DateTime get submissionTime => throw _privateConstructorUsedError;
+  String get location => throw _privateConstructorUsedError;
+  String get companyName => throw _privateConstructorUsedError;
+  String get serialNumber => throw _privateConstructorUsedError;
+  @JsonKey(toJson: _violationTypeToJson)
+  ViolationType get violationType => throw _privateConstructorUsedError;
 
   /// Serializes this SubmissionData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -46,12 +49,14 @@ abstract class $SubmissionDataCopyWith<$Res> {
   $Res call(
       {String qrData,
       String description,
-      List<String>? imagePaths,
-      DateTime? submissionTime,
-      String? location,
-      ViolationType? violationType});
+      List<String> imagePaths,
+      DateTime submissionTime,
+      String location,
+      String companyName,
+      String serialNumber,
+      @JsonKey(toJson: _violationTypeToJson) ViolationType violationType});
 
-  $ViolationTypeCopyWith<$Res>? get violationType;
+  $ViolationTypeCopyWith<$Res> get violationType;
 }
 
 /// @nodoc
@@ -71,10 +76,12 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
   $Res call({
     Object? qrData = null,
     Object? description = null,
-    Object? imagePaths = freezed,
-    Object? submissionTime = freezed,
-    Object? location = freezed,
-    Object? violationType = freezed,
+    Object? imagePaths = null,
+    Object? submissionTime = null,
+    Object? location = null,
+    Object? companyName = null,
+    Object? serialNumber = null,
+    Object? violationType = null,
   }) {
     return _then(_value.copyWith(
       qrData: null == qrData
@@ -85,22 +92,30 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      imagePaths: freezed == imagePaths
+      imagePaths: null == imagePaths
           ? _value.imagePaths
           : imagePaths // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      submissionTime: freezed == submissionTime
+              as List<String>,
+      submissionTime: null == submissionTime
           ? _value.submissionTime
           : submissionTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      location: freezed == location
+              as DateTime,
+      location: null == location
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      violationType: freezed == violationType
+              as String,
+      companyName: null == companyName
+          ? _value.companyName
+          : companyName // ignore: cast_nullable_to_non_nullable
+              as String,
+      serialNumber: null == serialNumber
+          ? _value.serialNumber
+          : serialNumber // ignore: cast_nullable_to_non_nullable
+              as String,
+      violationType: null == violationType
           ? _value.violationType
           : violationType // ignore: cast_nullable_to_non_nullable
-              as ViolationType?,
+              as ViolationType,
     ) as $Val);
   }
 
@@ -108,12 +123,8 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $ViolationTypeCopyWith<$Res>? get violationType {
-    if (_value.violationType == null) {
-      return null;
-    }
-
-    return $ViolationTypeCopyWith<$Res>(_value.violationType!, (value) {
+  $ViolationTypeCopyWith<$Res> get violationType {
+    return $ViolationTypeCopyWith<$Res>(_value.violationType, (value) {
       return _then(_value.copyWith(violationType: value) as $Val);
     });
   }
@@ -130,13 +141,15 @@ abstract class _$$SubmissionDataImplCopyWith<$Res>
   $Res call(
       {String qrData,
       String description,
-      List<String>? imagePaths,
-      DateTime? submissionTime,
-      String? location,
-      ViolationType? violationType});
+      List<String> imagePaths,
+      DateTime submissionTime,
+      String location,
+      String companyName,
+      String serialNumber,
+      @JsonKey(toJson: _violationTypeToJson) ViolationType violationType});
 
   @override
-  $ViolationTypeCopyWith<$Res>? get violationType;
+  $ViolationTypeCopyWith<$Res> get violationType;
 }
 
 /// @nodoc
@@ -154,10 +167,12 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
   $Res call({
     Object? qrData = null,
     Object? description = null,
-    Object? imagePaths = freezed,
-    Object? submissionTime = freezed,
-    Object? location = freezed,
-    Object? violationType = freezed,
+    Object? imagePaths = null,
+    Object? submissionTime = null,
+    Object? location = null,
+    Object? companyName = null,
+    Object? serialNumber = null,
+    Object? violationType = null,
   }) {
     return _then(_$SubmissionDataImpl(
       qrData: null == qrData
@@ -168,22 +183,30 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      imagePaths: freezed == imagePaths
+      imagePaths: null == imagePaths
           ? _value._imagePaths
           : imagePaths // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      submissionTime: freezed == submissionTime
+              as List<String>,
+      submissionTime: null == submissionTime
           ? _value.submissionTime
           : submissionTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      location: freezed == location
+              as DateTime,
+      location: null == location
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      violationType: freezed == violationType
+              as String,
+      companyName: null == companyName
+          ? _value.companyName
+          : companyName // ignore: cast_nullable_to_non_nullable
+              as String,
+      serialNumber: null == serialNumber
+          ? _value.serialNumber
+          : serialNumber // ignore: cast_nullable_to_non_nullable
+              as String,
+      violationType: null == violationType
           ? _value.violationType
           : violationType // ignore: cast_nullable_to_non_nullable
-              as ViolationType?,
+              as ViolationType,
     ));
   }
 }
@@ -194,10 +217,12 @@ class _$SubmissionDataImpl implements _SubmissionData {
   const _$SubmissionDataImpl(
       {required this.qrData,
       required this.description,
-      final List<String>? imagePaths,
-      this.submissionTime,
-      this.location,
-      this.violationType})
+      required final List<String> imagePaths,
+      required this.submissionTime,
+      required this.location,
+      required this.companyName,
+      required this.serialNumber,
+      @JsonKey(toJson: _violationTypeToJson) required this.violationType})
       : _imagePaths = imagePaths;
 
   factory _$SubmissionDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -207,26 +232,29 @@ class _$SubmissionDataImpl implements _SubmissionData {
   final String qrData;
   @override
   final String description;
-  final List<String>? _imagePaths;
+  final List<String> _imagePaths;
   @override
-  List<String>? get imagePaths {
-    final value = _imagePaths;
-    if (value == null) return null;
+  List<String> get imagePaths {
     if (_imagePaths is EqualUnmodifiableListView) return _imagePaths;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_imagePaths);
   }
 
   @override
-  final DateTime? submissionTime;
+  final DateTime submissionTime;
   @override
-  final String? location;
+  final String location;
   @override
-  final ViolationType? violationType;
+  final String companyName;
+  @override
+  final String serialNumber;
+  @override
+  @JsonKey(toJson: _violationTypeToJson)
+  final ViolationType violationType;
 
   @override
   String toString() {
-    return 'SubmissionData(qrData: $qrData, description: $description, imagePaths: $imagePaths, submissionTime: $submissionTime, location: $location, violationType: $violationType)';
+    return 'SubmissionData(qrData: $qrData, description: $description, imagePaths: $imagePaths, submissionTime: $submissionTime, location: $location, companyName: $companyName, serialNumber: $serialNumber, violationType: $violationType)';
   }
 
   @override
@@ -243,6 +271,10 @@ class _$SubmissionDataImpl implements _SubmissionData {
                 other.submissionTime == submissionTime) &&
             (identical(other.location, location) ||
                 other.location == location) &&
+            (identical(other.companyName, companyName) ||
+                other.companyName == companyName) &&
+            (identical(other.serialNumber, serialNumber) ||
+                other.serialNumber == serialNumber) &&
             (identical(other.violationType, violationType) ||
                 other.violationType == violationType));
   }
@@ -256,6 +288,8 @@ class _$SubmissionDataImpl implements _SubmissionData {
       const DeepCollectionEquality().hash(_imagePaths),
       submissionTime,
       location,
+      companyName,
+      serialNumber,
       violationType);
 
   /// Create a copy of SubmissionData
@@ -279,10 +313,13 @@ abstract class _SubmissionData implements SubmissionData {
   const factory _SubmissionData(
       {required final String qrData,
       required final String description,
-      final List<String>? imagePaths,
-      final DateTime? submissionTime,
-      final String? location,
-      final ViolationType? violationType}) = _$SubmissionDataImpl;
+      required final List<String> imagePaths,
+      required final DateTime submissionTime,
+      required final String location,
+      required final String companyName,
+      required final String serialNumber,
+      @JsonKey(toJson: _violationTypeToJson)
+      required final ViolationType violationType}) = _$SubmissionDataImpl;
 
   factory _SubmissionData.fromJson(Map<String, dynamic> json) =
       _$SubmissionDataImpl.fromJson;
@@ -292,13 +329,18 @@ abstract class _SubmissionData implements SubmissionData {
   @override
   String get description;
   @override
-  List<String>? get imagePaths;
+  List<String> get imagePaths;
   @override
-  DateTime? get submissionTime;
+  DateTime get submissionTime;
   @override
-  String? get location;
+  String get location;
   @override
-  ViolationType? get violationType;
+  String get companyName;
+  @override
+  String get serialNumber;
+  @override
+  @JsonKey(toJson: _violationTypeToJson)
+  ViolationType get violationType;
 
   /// Create a copy of SubmissionData
   /// with the given fields replaced by the non-null parameter values.
