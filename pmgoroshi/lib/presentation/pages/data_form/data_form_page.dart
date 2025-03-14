@@ -26,27 +26,36 @@ class DataFormPage extends ConsumerWidget {
         Scaffold(
           backgroundColor: Colors.grey.shade50,
           appBar: AppBar(title: const Text('데이터 입력'), elevation: 0),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildQrDataCard(context, qrData, ref),
-                  const SizedBox(height: 24),
-                  LocationSection(qrData: qrData),
-                  const SizedBox(height: 24),
-                  ViolationTypeSection(qrData: qrData),
-                  const SizedBox(height: 24),
-                  DescriptionSection(qrData: qrData),
-                  const SizedBox(height: 24),
-                  ImagePickerSection(qrData: qrData),
-                  const SizedBox(height: 32),
-                  ErrorMessageSection(qrData: qrData),
-                  const SizedBox(height: 24),
-                  SubmitButtonSection(qrData: qrData),
-                  const SizedBox(height: 24),
-                ],
+          body: GestureDetector(
+            // 화면의 빈 공간을 터치하면 키보드를 숨김
+            onTap: () => FocusScope.of(context).unfocus(),
+            // 제스처 이벤트가 자식 위젯에 전달되도록 설정
+            behavior: HitTestBehavior.translucent,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildQrDataCard(context, qrData, ref),
+                    const SizedBox(height: 24),
+                    LocationSection(qrData: qrData),
+                    const SizedBox(height: 24),
+                    ViolationTypeSection(qrData: qrData),
+                    const SizedBox(height: 24),
+                    DescriptionSection(qrData: qrData),
+                    const SizedBox(height: 24),
+                    ImagePickerSection(qrData: qrData),
+                    const SizedBox(height: 32),
+                    ErrorMessageSection(qrData: qrData),
+                    const SizedBox(height: 24),
+                    SubmitButtonSection(qrData: qrData),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
@@ -305,7 +314,22 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
                   state.isLocationLoading
                       ? null
                       : () {
-                        controller.refreshLocation().then((_) {});
+                        // 키보드 숨기기
+                        FocusScope.of(context).unfocus();
+                        // 리빌드를 위한 함수가 없어서 추가
+                        void _rebuildMapIfNeeded() {
+                          if (state.position != null) {
+                            setState(() {
+                              _hasInitialized = false;
+                              _cachedMapWidget = null;
+                            });
+                          }
+                        }
+
+                        // 위치 갱신 후 지도 리빌드
+                        controller.refreshLocation().then((_) {
+                          _rebuildMapIfNeeded();
+                        });
                       },
               icon: Icon(
                 Icons.refresh,
@@ -561,6 +585,13 @@ class DescriptionSection extends ConsumerWidget {
               contentPadding: const EdgeInsets.all(16),
             ),
             style: const TextStyle(height: 1.5),
+            // 자동 포커스 방지
+            autofocus: false,
+            // 키보드 유형 설정
+            keyboardType: TextInputType.multiline,
+            // 입력 완료 시 키보드 숨김 설정
+            textInputAction: TextInputAction.done,
+            onEditingComplete: () => FocusScope.of(context).unfocus(),
           ),
         ),
         if (description.isNotEmpty)
