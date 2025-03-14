@@ -16,31 +16,73 @@ class DataFormPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('데이터 입력'), centerTitle: true),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildQrDataCard(context, qrData, ref),
-              const SizedBox(height: 24),
-              LocationSection(qrData: qrData),
-              const SizedBox(height: 24),
-              ViolationTypeSection(qrData: qrData),
-              const SizedBox(height: 24),
-              DescriptionSection(qrData: qrData),
-              const SizedBox(height: 24),
-              ImagePickerSection(qrData: qrData),
-              const SizedBox(height: 32),
-              ErrorMessageSection(qrData: qrData),
-              const SizedBox(height: 16),
-              SubmitButtonSection(qrData: qrData),
-            ],
+    // 제출 상태 관찰
+    final isSubmitting = ref.watch(
+      dataFormControllerProvider(qrData).select((s) => s.isSubmitting),
+    );
+
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(title: const Text('데이터 입력'), centerTitle: true),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildQrDataCard(context, qrData, ref),
+                  const SizedBox(height: 24),
+                  LocationSection(qrData: qrData),
+                  const SizedBox(height: 24),
+                  ViolationTypeSection(qrData: qrData),
+                  const SizedBox(height: 24),
+                  DescriptionSection(qrData: qrData),
+                  const SizedBox(height: 24),
+                  ImagePickerSection(qrData: qrData),
+                  const SizedBox(height: 32),
+                  ErrorMessageSection(qrData: qrData),
+                  const SizedBox(height: 16),
+                  SubmitButtonSection(qrData: qrData),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+
+        // 제출 중일 때 표시되는 전체 화면 오버레이
+        if (isSubmitting)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black54, // 반투명 검정색 배경
+              child: Center(
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(
+                          '제출 중입니다...',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('잠시만 기다려주세요'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -499,9 +541,6 @@ class SubmitButtonSection extends ConsumerWidget {
     );
     final controller = ref.read(dataFormControllerProvider(qrData).notifier);
 
-    // 성공한 경우만 듣도록 하는 리스너는 더이상 필요 없음
-    // 제출 버튼으로 직접 이동 로직을 처리함
-
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -532,15 +571,10 @@ class SubmitButtonSection extends ConsumerWidget {
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child:
-            state.isSubmitting
-                ? const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                )
-                : const Text(
-                  '제출하기',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+        child: Text(
+          state.isSubmitting ? '제출 중...' : '제출하기',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
