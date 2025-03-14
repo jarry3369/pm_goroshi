@@ -139,6 +139,14 @@ class DataFormController extends _$DataFormController {
 
   // 이미지 추가 최적화
   void _updateImagePaths(List<String> newImagePaths) {
+    // 최대 이미지 개수 제한 (5장)
+    const int maxImages = 5;
+
+    // 최대 개수를 초과하는 경우 잘라내기
+    if (newImagePaths.length > maxImages) {
+      newImagePaths = newImagePaths.sublist(0, maxImages);
+    }
+
     // 리스트 비교를 통해 변경점이 있는 경우에만 상태 업데이트
     if (state.imagePaths.length != newImagePaths.length ||
         !state.imagePaths.every((path) => newImagePaths.contains(path))) {
@@ -146,8 +154,57 @@ class DataFormController extends _$DataFormController {
     }
   }
 
+  // 갤러리에서 여러 이미지 선택
+  Future<void> pickMultipleImagesFromGallery() async {
+    // 최대 이미지 개수
+    const int maxImages = 5;
+
+    // 현재 이미지 개수가 이미 최대치인 경우
+    if (state.imagePaths.length >= maxImages) {
+      return;
+    }
+
+    // 로딩 상태 설정
+    state = state.copyWith(isImageLoading: true);
+
+    try {
+      final imagePickerService = ref.read(imagePickerServiceProvider);
+      final newImagePaths =
+          await imagePickerService.pickMultipleImagesFromGallery();
+
+      // 선택한 이미지가 없으면 종료
+      if (newImagePaths.isEmpty) {
+        state = state.copyWith(isImageLoading: false);
+        return;
+      }
+
+      // 현재 이미지 수와 새로 선택한 이미지 수의 합이 최대치를 초과하는지 확인
+      final remainingSlots = maxImages - state.imagePaths.length;
+
+      // 현재 이미지에 새로운 이미지 추가 (최대 remainingSlots개까지만)
+      final updatedImagePaths = [
+        ...state.imagePaths,
+        ...newImagePaths.take(remainingSlots),
+      ];
+
+      _updateImagePaths(updatedImagePaths);
+
+      // 이미지 선택 완료 후 로딩 상태 해제
+      state = state.copyWith(isImageLoading: false);
+    } catch (e) {
+      // 에러 발생 시 로딩 상태 해제
+      state = state.copyWith(isImageLoading: false);
+    }
+  }
+
   // 갤러리에서 이미지 선택
   Future<void> pickImageFromGallery() async {
+    // 이미지 개수 체크
+    const int maxImages = 5;
+    if (state.imagePaths.length >= maxImages) {
+      return; // 이미 최대 개수면 아무 작업도 하지 않음
+    }
+
     final imagePickerService = ref.read(imagePickerServiceProvider);
     final imagePath = await imagePickerService.pickImageFromGallery();
 
@@ -159,6 +216,12 @@ class DataFormController extends _$DataFormController {
 
   // 카메라로 이미지 촬영
   Future<void> pickImageFromCamera() async {
+    // 이미지 개수 체크
+    const int maxImages = 5;
+    if (state.imagePaths.length >= maxImages) {
+      return; // 이미 최대 개수면 아무 작업도 하지 않음
+    }
+
     final imagePickerService = ref.read(imagePickerServiceProvider);
     final imagePath = await imagePickerService.pickImageFromCamera();
 

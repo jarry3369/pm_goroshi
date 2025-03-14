@@ -18,6 +18,7 @@ class DataFormState with _$DataFormState {
     Position? position,
     ViolationType? violationType,
     @Default(false) bool isLocationLoading,
+    @Default(false) bool isImageLoading,
   }) = _DataFormState;
 
   factory DataFormState.initial(String qrData) =>

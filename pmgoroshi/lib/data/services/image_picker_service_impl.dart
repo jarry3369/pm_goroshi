@@ -25,6 +25,18 @@ class ImagePickerServiceImpl implements ImagePickerService {
   }
 
   @override
+  Future<List<String>> pickMultipleImagesFromGallery() async {
+    final result = await _picker.pickMultiImage(
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+
+    // null 안전 처리 및 경로 목록 반환
+    return result.map((image) => image.path).toList();
+  }
+
+  @override
   Future<String?> pickImageFromCamera() async {
     final hasPermission = await permissionHandler.checkPermission(
       Permission.camera,

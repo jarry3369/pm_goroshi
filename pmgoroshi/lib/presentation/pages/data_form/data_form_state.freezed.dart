@@ -26,6 +26,7 @@ mixin _$DataFormState {
   Position? get position => throw _privateConstructorUsedError;
   ViolationType? get violationType => throw _privateConstructorUsedError;
   bool get isLocationLoading => throw _privateConstructorUsedError;
+  bool get isImageLoading => throw _privateConstructorUsedError;
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.
@@ -50,7 +51,8 @@ abstract class $DataFormStateCopyWith<$Res> {
       String? location,
       Position? position,
       ViolationType? violationType,
-      bool isLocationLoading});
+      bool isLocationLoading,
+      bool isImageLoading});
 
   $ViolationTypeCopyWith<$Res>? get violationType;
 }
@@ -80,6 +82,7 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
     Object? position = freezed,
     Object? violationType = freezed,
     Object? isLocationLoading = null,
+    Object? isImageLoading = null,
   }) {
     return _then(_value.copyWith(
       qrData: null == qrData
@@ -122,6 +125,10 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
           ? _value.isLocationLoading
           : isLocationLoading // ignore: cast_nullable_to_non_nullable
               as bool,
+      isImageLoading: null == isImageLoading
+          ? _value.isImageLoading
+          : isImageLoading // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -158,7 +165,8 @@ abstract class _$$DataFormStateImplCopyWith<$Res>
       String? location,
       Position? position,
       ViolationType? violationType,
-      bool isLocationLoading});
+      bool isLocationLoading,
+      bool isImageLoading});
 
   @override
   $ViolationTypeCopyWith<$Res>? get violationType;
@@ -187,6 +195,7 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
     Object? position = freezed,
     Object? violationType = freezed,
     Object? isLocationLoading = null,
+    Object? isImageLoading = null,
   }) {
     return _then(_$DataFormStateImpl(
       qrData: null == qrData
@@ -229,6 +238,10 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
           ? _value.isLocationLoading
           : isLocationLoading // ignore: cast_nullable_to_non_nullable
               as bool,
+      isImageLoading: null == isImageLoading
+          ? _value.isImageLoading
+          : isImageLoading // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -246,7 +259,8 @@ class _$DataFormStateImpl implements _DataFormState {
       this.location,
       this.position,
       this.violationType,
-      this.isLocationLoading = false})
+      this.isLocationLoading = false,
+      this.isImageLoading = false})
       : _imagePaths = imagePaths;
 
   @override
@@ -279,10 +293,13 @@ class _$DataFormStateImpl implements _DataFormState {
   @override
   @JsonKey()
   final bool isLocationLoading;
+  @override
+  @JsonKey()
+  final bool isImageLoading;
 
   @override
   String toString() {
-    return 'DataFormState(qrData: $qrData, description: $description, imagePaths: $imagePaths, isSubmitting: $isSubmitting, isSuccess: $isSuccess, errorMessage: $errorMessage, location: $location, position: $position, violationType: $violationType, isLocationLoading: $isLocationLoading)';
+    return 'DataFormState(qrData: $qrData, description: $description, imagePaths: $imagePaths, isSubmitting: $isSubmitting, isSuccess: $isSuccess, errorMessage: $errorMessage, location: $location, position: $position, violationType: $violationType, isLocationLoading: $isLocationLoading, isImageLoading: $isImageLoading)';
   }
 
   @override
@@ -308,7 +325,9 @@ class _$DataFormStateImpl implements _DataFormState {
             (identical(other.violationType, violationType) ||
                 other.violationType == violationType) &&
             (identical(other.isLocationLoading, isLocationLoading) ||
-                other.isLocationLoading == isLocationLoading));
+                other.isLocationLoading == isLocationLoading) &&
+            (identical(other.isImageLoading, isImageLoading) ||
+                other.isImageLoading == isImageLoading));
   }
 
   @override
@@ -323,7 +342,8 @@ class _$DataFormStateImpl implements _DataFormState {
       location,
       position,
       violationType,
-      isLocationLoading);
+      isLocationLoading,
+      isImageLoading);
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.
@@ -345,7 +365,8 @@ abstract class _DataFormState implements DataFormState {
       final String? location,
       final Position? position,
       final ViolationType? violationType,
-      final bool isLocationLoading}) = _$DataFormStateImpl;
+      final bool isLocationLoading,
+      final bool isImageLoading}) = _$DataFormStateImpl;
 
   @override
   String get qrData;
@@ -367,6 +388,8 @@ abstract class _DataFormState implements DataFormState {
   ViolationType? get violationType;
   @override
   bool get isLocationLoading;
+  @override
+  bool get isImageLoading;
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.

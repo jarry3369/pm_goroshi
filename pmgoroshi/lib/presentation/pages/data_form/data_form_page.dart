@@ -618,13 +618,21 @@ class ImagePickerSection extends ConsumerWidget {
   const ImagePickerSection({super.key, required this.qrData});
 
   final String qrData;
+  // 최대 이미지 개수 상수 정의
+  static const int maxImages = 5;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final imagePaths = ref.watch(
       dataFormControllerProvider(qrData).select((s) => s.imagePaths),
     );
+    final isImageLoading = ref.watch(
+      dataFormControllerProvider(qrData).select((s) => s.isImageLoading),
+    );
     final controller = ref.read(dataFormControllerProvider(qrData).notifier);
+
+    // 이미지가 최대 개수에 도달했는지 확인
+    final bool isMaxImagesReached = imagePaths.length >= maxImages;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,6 +659,27 @@ class ImagePickerSection extends ConsumerWidget {
                 color: Colors.black87,
               ),
             ),
+            const Spacer(),
+            // 이미지 로딩 인디케이터 추가
+            if (isImageLoading)
+              Container(
+                width: 16,
+                height: 16,
+                margin: const EdgeInsets.only(right: 8),
+                child: CircularProgressIndicator(
+                  color: Colors.grey.shade500,
+                  strokeWidth: 2,
+                ),
+              ),
+            // 이미지 수 표시 추가
+            Text(
+              '${imagePaths.length}/$maxImages',
+              style: TextStyle(
+                color: isMaxImagesReached ? Colors.red : Colors.grey.shade600,
+                fontWeight:
+                    isMaxImagesReached ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -658,21 +687,72 @@ class ImagePickerSection extends ConsumerWidget {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: controller.pickImageFromGallery,
+                onPressed:
+                    isMaxImagesReached || isImageLoading
+                        ? null // 최대 개수에 도달하거나 로딩 중이면 버튼 비활성화
+                        : () async {
+                          if (imagePaths.length >= maxImages) {
+                            // 이미 최대 개수라면 스낵바 표시
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('최대 $maxImages장까지만 업로드 가능합니다'),
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                            );
+                            return;
+                          }
+                          controller.pickMultipleImagesFromGallery();
+                        },
                 icon: const Icon(Icons.photo_library),
-                label: const Text('갤러리에서 선택'),
+                label: const Text('갤러리'),
+                style: OutlinedButton.styleFrom(
+                  disabledForegroundColor: Colors.grey.shade400,
+                  disabledBackgroundColor: Colors.grey.shade100,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: controller.pickImageFromCamera,
+                onPressed:
+                    isMaxImagesReached || isImageLoading
+                        ? null // 최대 개수에 도달하거나 로딩 중이면 버튼 비활성화
+                        : () async {
+                          if (imagePaths.length >= maxImages) {
+                            // 이미 최대 개수라면 스낵바 표시
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('최대 $maxImages장까지만 업로드 가능합니다'),
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                            );
+                            return;
+                          }
+                          controller.pickImageFromCamera();
+                        },
                 icon: const Icon(Icons.camera_alt),
-                label: const Text('카메라로 촬영'),
+                label: const Text('카메라'),
+                style: OutlinedButton.styleFrom(
+                  disabledForegroundColor: Colors.grey.shade400,
+                  disabledBackgroundColor: Colors.grey.shade100,
+                ),
               ),
             ),
           ],
         ),
+        // 최대 이미지 설명 메시지 추가
+        if (isMaxImagesReached)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              '최대 이미지 개수($maxImages장)에 도달했습니다.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
         const SizedBox(height: 16),
         if (imagePaths.isNotEmpty)
           GridView.builder(
