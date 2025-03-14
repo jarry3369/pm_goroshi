@@ -24,10 +24,11 @@ class DataFormPage extends ConsumerWidget {
     return Stack(
       children: [
         Scaffold(
-          appBar: AppBar(title: const Text('데이터 입력'), centerTitle: true),
+          backgroundColor: Colors.grey.shade50,
+          appBar: AppBar(title: const Text('데이터 입력'), elevation: 0),
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -42,8 +43,9 @@ class DataFormPage extends ConsumerWidget {
                   ImagePickerSection(qrData: qrData),
                   const SizedBox(height: 32),
                   ErrorMessageSection(qrData: qrData),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   SubmitButtonSection(qrData: qrData),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -54,10 +56,9 @@ class DataFormPage extends ConsumerWidget {
         if (isSubmitting)
           Positioned.fill(
             child: Container(
-              color: Colors.black54, // 반투명 검정색 배경
+              color: Colors.black.withOpacity(0.5),
               child: Center(
                 child: Card(
-                  elevation: 8,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -66,15 +67,26 @@ class DataFormPage extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const CircularProgressIndicator(),
+                        const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF3B82F6),
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           '제출 중입니다...',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF3B82F6),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        const Text('잠시만 기다려주세요'),
+                        Text(
+                          '잠시만 기다려주세요',
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
                       ],
                     ),
                   ),
@@ -103,56 +115,101 @@ class DataFormPage extends ConsumerWidget {
         }
 
         return Card(
-          elevation: 2,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'QR 코드 정보',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  qrData,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // 업체 정보 표시
                 Row(
                   children: [
-                    Text(
-                      '업체명: ',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.qr_code,
+                        color: Color(0xFF3B82F6),
+                        size: 20,
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        companyName,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                    const SizedBox(width: 12),
+                    Text(
+                      'QR 코드 정보',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    qrData,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade800,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 업체 정보 표시
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          '업체명',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          companyName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 // 시리얼 넘버 표시
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '시리얼 번호: ',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        '시리얼 번호',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                     ),
                     Expanded(
                       child: Text(
                         serialNumber ?? '알 수 없음',
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -200,104 +257,111 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
       _hasInitialized = true;
     }
 
-    // 위치 변경 시에만 맵 위젯 업데이트
-    if (state.position != null && _hasInitialized && _cachedMapWidget != null) {
-      final latKey = _cachedMapWidget!.key as ValueKey;
-      final keyString = latKey.value.toString();
-      final newKeyString =
-          'map_${state.position!.latitude}_${state.position!.longitude}';
-
-      if (keyString != newKeyString) {
-        _cachedMapWidget = MapWidgetWithCache(
-          key: ValueKey(newKeyString),
-          latitude: state.position!.latitude,
-          longitude: state.position!.longitude,
-        );
-      }
-    }
-
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '현재 위치',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.location_on,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '위치 정보',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const Spacer(),
+            if (state.isLocationLoading)
+              Container(
+                width: 16,
+                height: 16,
+                margin: const EdgeInsets.only(right: 8),
+                child: CircularProgressIndicator(
+                  color: Colors.grey.shade500,
+                  strokeWidth: 2,
                 ),
-                // 로딩 상태에 따른 새로고침 버튼
-                _RefreshLocationButton(
-                  isLoading: state.isLocationLoading,
-                  onRefresh: controller.refreshLocation,
+              ),
+            TextButton.icon(
+              onPressed:
+                  state.isLocationLoading ? null : controller.refreshLocation,
+              icon: Icon(
+                Icons.refresh,
+                size: 16,
+                color: const Color(
+                  0xFF3B82F6,
+                ).withOpacity(state.isLocationLoading ? 0.5 : 1.0),
+              ),
+              label: Text(
+                '새로고침',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: const Color(
+                    0xFF3B82F6,
+                  ).withOpacity(state.isLocationLoading ? 0.5 : 1.0),
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // 지도 표시
+        Container(
+          height: 180,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            color: Colors.grey.shade100,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child:
+                state.position == null
+                    ? const Center(child: Text('위치 정보 로딩 중...'))
+                    : _cachedMapWidget,
+          ),
+        ),
+
+        const SizedBox(height: 16),
+        // 주소 정보 표시
+        if (state.location != null)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    state.location!,
+                    style: TextStyle(color: Colors.grey.shade800, height: 1.4),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            // 로딩 표시 영역
-            if (state.isLocationLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-
-            // 위치 정보 및 맵 표시 영역
-            if (!state.isLocationLoading && state.position != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 도로명 주소 표시
-                  if (state.location != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Text(
-                        state.location!,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-
-                  // 캐시된 맵 위젯 표시
-                  if (_cachedMapWidget != null) _cachedMapWidget!,
-                ],
-              )
-            else if (!state.isLocationLoading)
-              OutlinedButton.icon(
-                onPressed: controller.refreshLocation,
-                icon: const Icon(Icons.location_on),
-                label: const Text('위치 정보 가져오기'),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 위치 새로고침 버튼 위젯 분리
-class _RefreshLocationButton extends StatelessWidget {
-  const _RefreshLocationButton({
-    Key? key,
-    required this.isLoading,
-    required this.onRefresh,
-  }) : super(key: key);
-
-  final bool isLoading;
-  final VoidCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.refresh),
-      onPressed: isLoading ? null : onRefresh,
-      tooltip: '위치 새로고침',
+          ),
+      ],
     );
   }
 }
@@ -310,7 +374,7 @@ class ViolationTypeSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(
+    final violationType = ref.watch(
       dataFormControllerProvider(qrData).select((s) => s.violationType),
     );
     final controller = ref.read(dataFormControllerProvider(qrData).notifier);
@@ -318,41 +382,109 @@ class ViolationTypeSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '위반 유형',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Card(
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButtonFormField<ViolationType>(
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              hint: const Text('위반 유형을 선택하세요'),
-              value: state,
-              isExpanded: true,
-              items:
-                  violationTypes.asMap().entries.map((e) {
-                    return DropdownMenuItem<ViolationType>(
-                      value: e.value,
-                      child: Text(
-                        '${e.key + 1}. ${e.value.name}',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  controller.updateViolationType(value);
-                }
-              },
+              child: const Icon(
+                Icons.error_outline,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
             ),
+            const SizedBox(width: 12),
+            Text(
+              '위반 유형',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            children: List.generate(violationTypes.length, (index) {
+              final type = violationTypes[index];
+              final isSelected = violationType == type;
+              final isLast = index == violationTypes.length - 1;
+
+              return InkWell(
+                onTap: () => controller.updateViolationType(type),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom:
+                          !isLast
+                              ? BorderSide(color: Colors.grey.shade100)
+                              : BorderSide.none,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color:
+                                isSelected
+                                    ? const Color(0xFF3B82F6)
+                                    : Colors.grey.shade400,
+                            width: 2,
+                          ),
+                          color:
+                              isSelected
+                                  ? const Color(0xFF3B82F6)
+                                  : Colors.transparent,
+                        ),
+                        child:
+                            isSelected
+                                ? const Icon(
+                                  Icons.check,
+                                  size: 12,
+                                  color: Colors.white,
+                                )
+                                : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          type.name,
+                          style: TextStyle(
+                            fontWeight:
+                                isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                            color:
+                                isSelected
+                                    ? const Color(0xFF3B82F6)
+                                    : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ),
         ),
       ],
@@ -376,22 +508,64 @@ class DescriptionSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '상세 설명',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.description,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '설명',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        TextFormField(
-          initialValue: description,
-          onChanged: controller.updateDescription,
-          maxLines: 4,
-          decoration: InputDecoration(
-            hintText: '상세 내용을 입력하세요',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: TextField(
+            maxLines: 5,
+            minLines: 3,
+            onChanged: controller.updateDescription,
+            decoration: InputDecoration(
+              hintText: '위반 내용에 대한 설명을 입력해주세요',
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
+            ),
+            style: const TextStyle(height: 1.5),
           ),
         ),
+        if (description.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4),
+            child: Text(
+              '${description.length}/500자',
+              style: TextStyle(
+                fontSize: 12,
+                color:
+                    description.length > 500
+                        ? Colors.red
+                        : Colors.grey.shade600,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -413,25 +587,47 @@ class ImagePickerSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '사진 첨부',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
         Row(
           children: [
-            OutlinedButton.icon(
-              onPressed: controller.pickImageFromGallery,
-              icon: const Icon(Icons.photo_library),
-              label: const Text('갤러리'),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.photo,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
-            OutlinedButton.icon(
-              onPressed: controller.pickImageFromCamera,
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('카메라'),
+            Text(
+              '사진 첨부',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.pickImageFromGallery,
+                icon: const Icon(Icons.photo_library),
+                label: const Text('갤러리에서 선택'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.pickImageFromCamera,
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('카메라로 촬영'),
+              ),
             ),
           ],
         ),
@@ -442,8 +638,8 @@ class ImagePickerSection extends ConsumerWidget {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: imagePaths.length,
             itemBuilder: (context, index) {
@@ -451,28 +647,42 @@ class ImagePickerSection extends ConsumerWidget {
               return Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(imagePath),
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Image.file(
+                        File(imagePath),
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   Positioned(
-                    top: 4,
-                    right: 4,
+                    top: 6,
+                    right: 6,
                     child: GestureDetector(
                       onTap: () => controller.removeImage(index),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                         child: const Icon(
                           Icons.close,
-                          color: Colors.white,
+                          color: Colors.black54,
                           size: 16,
                         ),
                       ),
@@ -504,20 +714,27 @@ class ErrorMessageSection extends ConsumerWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.shade300),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: Colors.red.shade700),
-          const SizedBox(width: 8),
+          Container(
+            margin: const EdgeInsets.only(top: 2),
+            child: Icon(
+              Icons.error_outline,
+              color: Colors.red.shade700,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               errorMessage,
-              style: TextStyle(color: Colors.red.shade700),
+              style: TextStyle(color: Colors.red.shade700, height: 1.5),
             ),
           ),
         ],
@@ -543,7 +760,6 @@ class SubmitButtonSection extends ConsumerWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 50,
       child: ElevatedButton(
         onPressed:
             state.isSubmitting
@@ -566,14 +782,30 @@ class SubmitButtonSection extends ConsumerWidget {
                     );
                   }
                 },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          state.isSubmitting ? '제출 중...' : '제출하기',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (state.isSubmitting)
+                Container(
+                  width: 20,
+                  height: 20,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+              Text(
+                state.isSubmitting ? '제출 중...' : '제출하기',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -630,10 +862,12 @@ class OptimizedNaverMapWidget extends StatefulWidget {
       _OptimizedNaverMapWidgetState();
 }
 
-class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
-  static NaverMapController? _mapController;
-  static NMarker? _marker;
-  static bool _isMapInitialized = false;
+class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget>
+    with WidgetsBindingObserver {
+  NaverMapController? _mapController;
+  NMarker? _marker;
+  bool _isMapInitialized = false;
+  bool _isDisposed = false;
 
   // ValueNotifier를 통한 위치 변경 감지
   late final ValueNotifier<NLatLng> _positionNotifier;
@@ -641,6 +875,7 @@ class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _positionNotifier = ValueNotifier<NLatLng>(
       NLatLng(widget.latitude, widget.longitude),
     );
@@ -648,10 +883,32 @@ class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
 
   @override
   void dispose() {
-    // 앱이 종료될 때만 위젯이 dispose 되도록 처리
-    // 일반적인 리빌드에서는 _mapController 유지
+    _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _positionNotifier.dispose();
+    if (_mapController != null) {
+      // 맵 컨트롤러 정리
+      _mapController = null;
+      _marker = null;
+      _isMapInitialized = false;
+    }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 앱 생명주기 상태 변경 감지
+    if (state == AppLifecycleState.resumed) {
+      // 앱이 포그라운드로 돌아왔을 때 맵 재초기화
+      if (_isMapInitialized && _mapController != null) {
+        // 지도 다시 그리기 위해 상태 재설정
+        setState(() {
+          _isMapInitialized = false;
+          _mapController = null;
+          _marker = null;
+        });
+      }
+    }
   }
 
   @override
@@ -667,8 +924,8 @@ class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
   }
 
   void _updateMapAndMarker() {
-    // 맵이 초기화되지 않았으면 아무 작업도 하지 않음
-    if (!_isMapInitialized || _mapController == null) return;
+    // 맵이 초기화되지 않았거나 이미 dispose된 경우 아무 작업도 하지 않음
+    if (!_isMapInitialized || _mapController == null || _isDisposed) return;
 
     // 카메라 이동 (애니메이션 없이 즉시 이동)
     _mapController!.updateCamera(
@@ -685,25 +942,7 @@ class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // 맵이 이미 초기화되었고 위치만 변경된 경우 빈 컨테이너를 사용하여 리렌더링 방지
-    if (_isMapInitialized && _mapController != null) {
-      _updateMapAndMarker();
-
-      // 지도 크기와 모양만 유지하는 컨테이너 반환 (내부 맵은 업데이트만 함)
-      // 이미 초기화된 맵을 보여주기 위해 ClipRRect로 감싸서 보이게 함
-      return Container(
-        height: 200,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        clipBehavior: Clip.antiAlias, // 지도가 경계를 넘어가지 않도록
-        child: const SizedBox.expand(), // 지도가 보이도록 확장
-      );
-    }
-
-    // 최초 렌더링 시에만 실제 맵 위젯 생성
+    // 앱이 포그라운드로 복귀했거나 초기 상태면 맵 새로 그리기
     return SizedBox(
       height: 200,
       width: double.infinity,
@@ -725,7 +964,9 @@ class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
               locationButtonEnable: false,
             ),
             onMapReady: (controller) {
-              // 컨트롤러를 static 변수에 저장하여 재사용
+              if (_isDisposed) return;
+
+              // 컨트롤러 저장 (이제 정적 변수가 아닌 인스턴스 변수로 저장)
               _mapController = controller;
               _isMapInitialized = true;
               _addMarker();
@@ -737,7 +978,7 @@ class _OptimizedNaverMapWidgetState extends State<OptimizedNaverMapWidget> {
   }
 
   void _addMarker() {
-    if (_mapController == null) return;
+    if (_mapController == null || _isDisposed) return;
 
     // 마커가 없는 경우에만 추가
     if (_marker == null) {

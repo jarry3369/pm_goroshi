@@ -228,13 +228,14 @@ class DataFormController extends _$DataFormController {
     }
 
     // 모든 필수 필드 유효성 검사
-    if (state.description.isEmpty) {
-      state = state.copyWith(errorMessage: '설명을 입력해주세요');
-      throw state;
-    }
 
     if (state.violationType == null) {
       state = state.copyWith(errorMessage: '위반 유형을 선택해주세요');
+      throw state;
+    }
+
+    if (state.description.isEmpty) {
+      state = state.copyWith(errorMessage: '설명을 입력해주세요');
       throw state;
     }
 
