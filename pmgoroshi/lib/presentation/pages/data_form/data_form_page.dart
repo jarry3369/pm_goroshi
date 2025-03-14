@@ -1,11 +1,26 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_controller.dart';
 import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/domain/entities/violation_type.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+
+// 업체 URL 및 이름 매핑 정보
+final Map<String, String> companyUrls = {
+  'qrcode.theswing.co.kr': '더스윙(스윙)',
+  'hbe.kr': '피유엠피(씽씽)',
+  'open.gbike.io': '지빌리티(지쿠터)',
+  'kickgoing.io': '울룰로(킥고잉)',
+  'app.hikick.kr': '오렌지랩(하이킥)',
+  'dartsharing.com': '다트쉐어링(다트)',
+  'ride.bird.co': '버드코리아(버드)',
+  'deering.co': '디어코퍼레이션(디어)',
+  'deeplink.ridebeam.com': '빔모빌리티(빔)',
+  'matrix.elecle.bike': '일레클',
+};
 
 // DataFormPage를 다시 ConsumerWidget으로 변경
 class DataFormPage extends ConsumerWidget {
@@ -43,7 +58,36 @@ class DataFormPage extends ConsumerWidget {
     );
   }
 
+  (String company, String? firstParam) getCompanyAndFirstParam(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final host = uri.host.toLowerCase();
+
+      String companyName = '알 수 없는 업체';
+      for (final entry in companyUrls.entries) {
+        if (host == entry.key || host.contains(entry.key)) {
+          companyName = entry.value;
+          break;
+        }
+      }
+
+      String? firstParam;
+      if (uri.queryParameters.isNotEmpty) {
+        firstParam = uri.queryParameters.values.first;
+        if (companyName == '지빌리티(지쿠터)' && firstParam.length > 6) {
+          firstParam = firstParam.substring(firstParam.length - 6);
+        }
+      }
+
+      return (companyName, firstParam);
+    } catch (e) {
+      return ('유효하지 않은 URL', null);
+    }
+  }
+
   Widget _buildQRDataSection(BuildContext context, String qrData) {
+    final (companyName, serialNumber) = getCompanyAndFirstParam(qrData);
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -52,16 +96,50 @@ class DataFormPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'QR 코드 데이터',
+              'QR 코드 정보',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            SelectableText(
-              qrData,
-              style: Theme.of(context).textTheme.bodyLarge,
+            const SizedBox(height: 12),
+            // 업체 정보 표시
+            Row(
+              children: [
+                Text(
+                  '업체명: ',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Expanded(
+                  child: Text(
+                    companyName,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 8),
+            // 시리얼 넘버 표시
+            if (serialNumber != null) ...[
+              Row(
+                children: [
+                  Text(
+                    '기기 시리얼 넘버: ',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      serialNumber,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
           ],
         ),
       ),

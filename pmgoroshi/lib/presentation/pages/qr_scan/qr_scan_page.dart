@@ -119,10 +119,6 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
                       if (barcodes.isNotEmpty &&
                           barcodes.first.rawValue != null) {
                         final qrData = barcodes.first.rawValue!;
-                        final result = ScanResult(
-                          qrData: qrData,
-                          scanTime: DateTime.now(),
-                        );
 
                         // 스캐너 중지 후 다음 화면으로 이동
                         scannerService.stopScanner();
