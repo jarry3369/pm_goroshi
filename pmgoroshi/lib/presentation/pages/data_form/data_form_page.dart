@@ -239,17 +239,24 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
   bool _hasInitialized = false;
 
   @override
+  void dispose() {
+    _cachedMapWidget = null;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(dataFormControllerProvider(widget.qrData));
     final controller = ref.read(
       dataFormControllerProvider(widget.qrData).notifier,
     );
 
-    // 위치 정보가 있을 때만 맵 위젯 초기화 (최초 1회)
-    if (state.position != null && !_hasInitialized) {
+    // 위치 정보가 있을 때만 맵 위젯 초기화 (최초 1회 또는 재빌드시)
+    if (state.position != null &&
+        (!_hasInitialized || _cachedMapWidget == null)) {
       _cachedMapWidget = MapWidgetWithCache(
         key: ValueKey(
-          'map_${state.position!.latitude}_${state.position!.longitude}',
+          'map_${state.position!.latitude}_${state.position!.longitude}_${DateTime.now().millisecondsSinceEpoch}',
         ),
         latitude: state.position!.latitude,
         longitude: state.position!.longitude,
@@ -295,7 +302,11 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
               ),
             TextButton.icon(
               onPressed:
-                  state.isLocationLoading ? null : controller.refreshLocation,
+                  state.isLocationLoading
+                      ? null
+                      : () {
+                        controller.refreshLocation().then((_) {});
+                      },
               icon: Icon(
                 Icons.refresh,
                 size: 16,
@@ -812,9 +823,6 @@ class SubmitButtonSection extends ConsumerWidget {
   }
 }
 
-// 맵 위젯 싱글톤 관리를 위한 글로벌 키 추가
-final _naverMapKey = GlobalKey();
-
 // 캐싱 메커니즘이 적용된 맵 위젯
 class MapWidgetWithCache extends StatefulWidget {
   const MapWidgetWithCache({
@@ -839,7 +847,7 @@ class _MapWidgetWithCacheState extends State<MapWidgetWithCache>
   Widget build(BuildContext context) {
     super.build(context);
     return OptimizedNaverMapWidget(
-      key: _naverMapKey, // 글로벌 키 사용
+      key: ValueKey('map_${widget.latitude}_${widget.longitude}'),
       latitude: widget.latitude,
       longitude: widget.longitude,
     );
