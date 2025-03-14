@@ -166,11 +166,16 @@ class DataFormPage extends ConsumerWidget {
                               state.position!.latitude,
                               state.position!.longitude,
                             ),
-                            zoom: 15,
+                            zoom: 17,
                           ),
+
                           mapType: NMapType.basic,
-                          nightModeEnable: false,
-                          locationButtonEnable: true,
+                          maxZoom: 20,
+                          minZoom: 15,
+                          logoClickEnable: false,
+                          nightModeEnable: true,
+                          zoomGesturesEnable: true,
+                          locationButtonEnable: false,
                         ),
                         onMapReady: (controller) {
                           // 마커 추가
