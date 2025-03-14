@@ -4,9 +4,17 @@ import 'package:pmgoroshi/presentation/routes/app_router.dart';
 import 'package:pmgoroshi/core/permissions/permission_handler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // supabase 초기화
+  await Supabase.initialize(
+    url: 'https://dkidaihvsiykayvfeieh.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraWRhaWh2c2l5a2F5dmZlaWVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5NDMyMDAsImV4cCI6MjA1NzUxOTIwMH0.NGHYLonvqDYZSRoM2smTHqGGvxAgozREIDfhoyVH7Y4',
+  );
 
   // 네이버 맵 초기화
   await NaverMapSdk.instance.initialize(
