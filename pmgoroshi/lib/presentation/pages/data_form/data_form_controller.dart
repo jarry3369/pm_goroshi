@@ -27,9 +27,27 @@ class DataFormController extends _$DataFormController {
     return initialState.copyWith(isLocationLoading: true);
   }
 
-  // 설명 업데이트
+  // 설명 업데이트 - 디바운스 적용으로 잦은 상태 업데이트 방지
+  String? _lastDescription;
+  Future<void>? _pendingDescriptionUpdate;
+
   void updateDescription(String description) {
-    state = state.copyWith(description: description);
+    // 동일한 설명이면 업데이트 하지 않음
+    if (_lastDescription == description) return;
+    _lastDescription = description;
+
+    // 기존 대기 중인 업데이트가 있으면 취소
+    _pendingDescriptionUpdate?.whenComplete(() {});
+
+    // 300ms 딜레이 후 업데이트 실행 (타이핑 중에는 업데이트하지 않음)
+    _pendingDescriptionUpdate = Future.delayed(
+      const Duration(milliseconds: 300),
+      () {
+        if (_lastDescription == description) {
+          state = state.copyWith(description: description);
+        }
+      },
+    );
   }
 
   // 위반 유형 업데이트
@@ -45,11 +63,20 @@ class DataFormController extends _$DataFormController {
 
       if (position != null) {
         final address = await locationService.getFormattedAddress(position);
-        state = state.copyWith(
-          position: position,
-          location: address,
-          isLocationLoading: false,
-        );
+
+        // 위치 정보가 변경된 경우에만 상태 업데이트
+        if (state.position == null ||
+            state.position!.latitude != position.latitude ||
+            state.position!.longitude != position.longitude) {
+          state = state.copyWith(
+            position: position,
+            location: address,
+            isLocationLoading: false,
+          );
+        } else {
+          // 위치는 같지만 로딩 상태만 변경
+          state = state.copyWith(isLocationLoading: false);
+        }
       } else {
         state = state.copyWith(
           isLocationLoading: false,
@@ -66,8 +93,55 @@ class DataFormController extends _$DataFormController {
 
   // 위치 정보 새로고침
   Future<void> refreshLocation() async {
+    // 이미 로딩 중이면 중복 요청 방지
+    if (state.isLocationLoading) return;
+
+    // 로딩 상태만 변경하고, 다른 상태는 그대로 유지
     state = state.copyWith(isLocationLoading: true, errorMessage: null);
-    await _fetchCurrentLocation();
+
+    try {
+      final locationService = ref.read(locationServiceProvider);
+      final position = await locationService.getCurrentPosition();
+
+      if (position != null) {
+        final address = await locationService.getFormattedAddress(position);
+
+        // 위치 정보가 변경된 경우에만 모든 상태 업데이트
+        if (state.position == null ||
+            state.position!.latitude != position.latitude ||
+            state.position!.longitude != position.longitude) {
+          state = state.copyWith(
+            position: position,
+            location: address,
+            isLocationLoading: false,
+          );
+        } else {
+          // 위치가 동일한 경우, 로딩 상태만 업데이트
+          state = state.copyWith(isLocationLoading: false);
+        }
+      } else {
+        // 위치 정보를 가져오지 못한 경우
+        state = state.copyWith(
+          isLocationLoading: false,
+          errorMessage: '위치 정보를 가져올 수 없습니다. 위치 권한을 확인해주세요.',
+        );
+      }
+    } catch (e) {
+      // 오류 발생 시
+      state = state.copyWith(
+        isLocationLoading: false,
+        errorMessage: '위치 정보를 가져오는 중 오류가 발생했습니다: ${e.toString()}',
+      );
+    }
+  }
+
+  // 이미지 추가 최적화
+  void _updateImagePaths(List<String> newImagePaths) {
+    // 리스트 비교를 통해 변경점이 있는 경우에만 상태 업데이트
+    if (state.imagePaths.length != newImagePaths.length ||
+        !state.imagePaths.every((path) => newImagePaths.contains(path))) {
+      state = state.copyWith(imagePaths: newImagePaths);
+    }
   }
 
   // 갤러리에서 이미지 선택
@@ -76,7 +150,8 @@ class DataFormController extends _$DataFormController {
     final imagePath = await imagePickerService.pickImageFromGallery();
 
     if (imagePath != null) {
-      state = state.copyWith(imagePaths: [...state.imagePaths, imagePath]);
+      final updatedImagePaths = [...state.imagePaths, imagePath];
+      _updateImagePaths(updatedImagePaths);
     }
   }
 
@@ -86,17 +161,18 @@ class DataFormController extends _$DataFormController {
     final imagePath = await imagePickerService.pickImageFromCamera();
 
     if (imagePath != null) {
-      state = state.copyWith(imagePaths: [...state.imagePaths, imagePath]);
+      final updatedImagePaths = [...state.imagePaths, imagePath];
+      _updateImagePaths(updatedImagePaths);
     }
   }
 
   // 이미지 제거
   void removeImage(int index) {
+    if (index < 0 || index >= state.imagePaths.length) return;
+
     final updatedImages = List<String>.from(state.imagePaths);
-    if (index >= 0 && index < updatedImages.length) {
-      updatedImages.removeAt(index);
-      state = state.copyWith(imagePaths: updatedImages);
-    }
+    updatedImages.removeAt(index);
+    _updateImagePaths(updatedImages);
   }
 
   // 폼 제출
