@@ -6,6 +6,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// RouteObserver 전역 변수 정의
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

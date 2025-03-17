@@ -240,11 +240,23 @@ class DataFormController extends _$DataFormController {
     _updateImagePaths(updatedImages);
   }
 
-  // QR 코드 데이터 파싱 함수
+  // QR 코드 데이터 파싱해서 회사명과 시리얼 번호 추출
   Future<(String companyName, String? serialNumber)> parseQrData(
     String qrData,
   ) async {
     try {
+      // 직접 입력 모드 확인
+      if (qrData.startsWith('direct_input:')) {
+        return ('회사를 선택해주세요', null);
+      }
+      
+      // 수동 선택된 회사명 확인
+      if (qrData.startsWith('manual_selected:')) {
+        // manual_selected: 접두사 제거하고 직접 선택된 회사명 사용
+        final companyName = qrData.substring('manual_selected:'.length);
+        return (companyName, null);
+      }
+
       final supabaseService = SupabaseService();
       final companyMappings = await supabaseService.getCompanyMapping();
 
@@ -280,6 +292,49 @@ class DataFormController extends _$DataFormController {
       debugPrint('QR 코드 파싱 오류: $e');
       return ('유효하지 않은 URL', null);
     }
+  }
+
+  // 회사 목록 조회 (중복 제거된 목록)
+  Future<List<String>> getCompanyList() async {
+    try {
+      final supabaseService = SupabaseService();
+      final companyMappings = await supabaseService.getCompanyMapping();
+      
+      // 회사명 목록 추출 (중복 제거)
+      final companyNames = companyMappings.entries
+          .map((e) => e.value['name'] as String)
+          .toSet() // Set으로 변환하여 중복 제거
+          .toList();
+      
+      // 알파벳 순 정렬
+      companyNames.sort();
+      
+      return companyNames;
+    } catch (e) {
+      debugPrint('회사 목록 조회 오류: $e');
+      return [];
+    }
+  }
+  
+  // 회사명 선택 업데이트
+  void updateSelectedCompany(String companyName) {
+    debugPrint('회사 선택: $companyName');
+    
+    // 상태 업데이트 (qrData 변경)
+    final newQrData = 'manual_selected:$companyName';
+    state = state.copyWith(
+      qrData: newQrData,
+      // 다른 정보들 초기화 (필요에 따라 조정)
+      imagePaths: state.imagePaths,
+      position: state.position,
+      location: state.location,
+      description: state.description,
+      violationType: state.violationType,
+      errorMessage: null,
+    );
+    
+    // 직접 상태 변경 후 상태를 리빌드하기 위해 강제로 상태 재설정
+    state = state;
   }
 
   // 폼 제출

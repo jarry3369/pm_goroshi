@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,8 @@ import 'package:pmgoroshi/presentation/pages/qr_scan/qr_scan_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pmgoroshi/core/permissions/permission_handler.dart';
 import 'package:pmgoroshi/data/services/location_service.dart';
+import 'package:pmgoroshi/data/services/supabase_service.dart';
+import 'package:pmgoroshi/main.dart' show routeObserver;
 
 class QRScanPage extends ConsumerStatefulWidget {
   const QRScanPage({super.key});
@@ -17,65 +20,206 @@ class QRScanPage extends ConsumerStatefulWidget {
 }
 
 class _QRScanPageState extends ConsumerState<QRScanPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteAware {
+  
+  bool _isActive = false; // 페이지가 현재 활성 상태인지 추적
+
   @override
   void initState() {
     super.initState();
+    _isActive = true;
     WidgetsBinding.instance.addObserver(this);
+    debugPrint('QRScanPage - initState');
 
     // 권한 체크 후 스캐너 초기화
     _checkPermissionsAndInitialize();
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    debugPrint('QRScanPage - didChangeDependencies');
+    
+    // RouteObserver에 등록
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route as PageRoute);
+    }
+  }
+
+  @override
   void dispose() {
+    debugPrint('QRScanPage - dispose');
+    _isActive = false;
+    routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  // 이 페이지가 다시 보여질 때 호출됨 (뒤로가기로 돌아왔을 때)
+  @override
+  void didPopNext() {
+    debugPrint('QRScanPage - didPopNext: 뒤로가기로 돌아옴');
+    
+    // 페이지를 다시 활성화하고 스캐너 초기화
+    setState(() {
+      _isActive = true;
+    });
+    
+    // 잠시 지연 후 권한 체크 및 초기화 진행
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _checkPermissionsAndInitialize();
+      }
+    });
+  }
+
+  // 다른 페이지로 이동할 때 호출됨
+  @override
+  void didPushNext() {
+    debugPrint('QRScanPage - didPushNext: 다른 페이지로 이동');
+    
+    // 페이지 비활성화 및 스캐너 중지
+    setState(() {
+      _isActive = false;
+    });
+    
+    // 스캐너 확실히 중지
+    final scannerService = ref.read(qrScannerServiceProvider);
+    
+    // 스캐너가 실행 중이면 강제로 중지
+    if (scannerService.isScanning) {
+      debugPrint('QRScanPage - didPushNext: 실행 중인 스캐너 중지');
+      scannerService.stopScanner().then((_) {
+        debugPrint('QRScanPage - didPushNext: 스캐너 중지 완료');
+      });
+    }
+    
+    // 컨트롤러 리셋
+    ref.read(qRScanControllerProvider.notifier).resetScanner();
+  }
+
+  // 이 페이지가 스택에서 제거될 때 호출됨
+  @override
+  void didPop() {
+    debugPrint('QRScanPage - didPop: 페이지 스택에서 제거됨');
+    _isActive = false;
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('QRScanPage - didChangeAppLifecycleState: $state');
     // 앱이 백그라운드에서 포그라운드로 돌아올 때 스캐너 재시작
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _isActive) {
+      debugPrint('QRScanPage - 앱이 포그라운드로 돌아옴, 스캐너 재시작');
       _checkPermissionsAndInitialize();
     }
   }
 
   Future<void> _checkPermissionsAndInitialize() async {
-    final permissionHandler = ref.read(permissionHandlerProvider);
-
-    // 카메라 권한 확인
-    final hasCameraPermission = await permissionHandler.checkPermission(
-      Permission.camera,
-    );
-
-    // 위치 권한도 함께 확인
-    final hasLocationPermission = await permissionHandler.checkPermission(
-      Permission.location,
-    );
-
-    // 위치 권한이 없으면 요청
-    if (!hasLocationPermission) {
-      await permissionHandler.requestLocationPermission();
+    debugPrint('QRScanPage - 권한 체크 및 스캐너 초기화 시작');
+    if (!_isActive) {
+      debugPrint('QRScanPage - 페이지가 비활성 상태여서 초기화 중단');
+      return;
     }
 
-    if (hasCameraPermission) {
-      // 권한이 있을 경우 스캐너 초기화
-      ref.read(qRScanControllerProvider.notifier).initialize();
+    try {
+      // 카메라 권한 체크 - 직접 Permission 객체 사용
+      debugPrint('QRScanPage - 카메라 권한 확인 시작');
+      var cameraStatus = await Permission.camera.status;
+      debugPrint('QRScanPage - 카메라 권한 초기 상태: $cameraStatus (isGranted: ${cameraStatus.isGranted})');
+      
+      // 권한이 없으면 요청
+      if (!cameraStatus.isGranted) {
+        debugPrint('QRScanPage - 카메라 권한 요청 시작');
+        cameraStatus = await Permission.camera.request();
+        debugPrint('QRScanPage - 카메라 권한 요청 결과: $cameraStatus (isGranted: ${cameraStatus.isGranted})');
+      }
+
+      // 위치 권한 체크 - 직접 Permission 객체 사용
+      debugPrint('QRScanPage - 위치 권한 확인 시작');
+      var locationStatus = await Permission.location.status;
+      debugPrint('QRScanPage - 위치 권한 상태: $locationStatus (isGranted: ${locationStatus.isGranted})');
+      
+      // 필요한 경우 위치 권한 요청
+      if (!locationStatus.isGranted) {
+        debugPrint('QRScanPage - 위치 권한 요청 시작');
+        locationStatus = await Permission.location.request();
+        debugPrint('QRScanPage - 위치 권한 요청 결과: $locationStatus (isGranted: ${locationStatus.isGranted})');
+      }
+
+      // 반드시 다시 상태 확인 (최신 상태 반영)
+      final hasCamera = await Permission.camera.status.isGranted;
+      final hasLocation = await Permission.location.status.isGranted;
+      
+      debugPrint('QRScanPage - 최종 카메라 권한: $hasCamera');
+      debugPrint('QRScanPage - 최종 위치 권한: $hasLocation');
+
+      // 카메라 권한이 있는 경우에만 초기화
+      if (hasCamera) {
+        debugPrint('QRScanPage - 권한 확인 완료, 스캐너 컨트롤러 초기화 시작');
+        // 0.5초 지연 후 초기화 - 더 안정적인 초기화를 위해
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (_isActive) {  // 다시 활성 상태 확인
+          await ref.read(qRScanControllerProvider.notifier).initialize();
+          debugPrint('QRScanPage - 스캐너 컨트롤러 초기화 완료');
+        } else {
+          debugPrint('QRScanPage - 스캐너 초기화 도중 페이지가 비활성화됨');
+        }
+      } else {
+        debugPrint('QRScanPage - 카메라 권한 없음, 스캐너 초기화 불가');
+        // 여기에 사용자에게 권한이 필요하다는 알림 표시 가능
+      }
+    } catch (e) {
+      debugPrint('QRScanPage - 권한 체크 및 초기화 중 오류: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // QR 스캔 결과 스트림 구독 방식 개선
     ref.listen(
-      qrScannerServiceProvider.select((service) => service.scanResultStream),
+      qrScannerServiceProvider.select((service) => service.scanResultStream), 
       (previous, next) {
-        next.listen((result) {
-          if (result != null) {
-            // QR 스캔 결과가 있을 경우 다음 화면으로 이동
-            context.push('/form', extra: result.qrData);
-          }
-        });
+        // 이전 구독을 취소하고 새로운 구독 설정
+        if (previous != next) {
+          debugPrint('QRScanPage - QR 스캔 스트림 변경 감지');
+          
+          // 변수 선언해서 나중에 취소할 수 있도록 함
+          StreamSubscription<ScanResult?>? streamSubscription;
+          
+          streamSubscription = next.listen((result) {
+            // 활성 상태일 때만 결과 처리 + 중복 처리 방지
+            if (result != null && _isActive) {
+              debugPrint('QRScanPage - QR 스캔 결과 수신: ${result.qrData}');
+              
+              // 즉시 스트림 구독 취소
+              streamSubscription?.cancel();
+              
+              // 중복 처리 방지를 위해 즉시 비활성화
+              setState(() {
+                _isActive = false;
+              });
+              
+              // 스캐너 중지 및 컨트롤러 리셋
+              final scannerService = ref.read(qrScannerServiceProvider);
+              scannerService.stopScanner().then((_) {
+                debugPrint('QRScanPage - 스트림에서 스캐너 중지됨');
+                
+                // 컨트롤러 리셋
+                ref.read(qRScanControllerProvider.notifier).resetScanner();
+                
+                // 지연 후 페이지 이동
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (mounted) {
+                    debugPrint('QRScanPage - 스트림에서 페이지 이동');
+                    context.push('/form', extra: result.qrData);
+                  }
+                });
+              });
+            }
+          });
+        }
       },
     );
 
@@ -87,6 +231,8 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
             Expanded(child: _buildScannerView()),
             const SizedBox(height: 20),
             _buildScanInstructions(),
+            const SizedBox(height: 20),
+            _buildDirectFormButton(context),
             const SizedBox(height: 40),
           ],
         ),
@@ -109,22 +255,59 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
                 child: SizedBox(
                   width: double.infinity,
                   height: double.infinity,
-                  child: MobileScanner(
+                  child: _isActive ? MobileScanner(
                     controller: MobileScannerController(
                       detectionSpeed: DetectionSpeed.normal,
                       facing: CameraFacing.back,
+                      // 토치는 기본적으로 꺼두기
+                      torchEnabled: false,
                     ),
                     onDetect: (capture) {
+                      // 이미 비활성 상태면 스캔 처리하지 않음
+                      if (!_isActive) {
+                        debugPrint('QRScanPage - 비활성 상태에서 스캔, 무시');
+                        return;
+                      }
+                      
                       final barcodes = capture.barcodes;
                       if (barcodes.isNotEmpty &&
                           barcodes.first.rawValue != null) {
                         final qrData = barcodes.first.rawValue!;
+                        
+                        // 이미 스캔 처리 중이면 추가 처리 방지
+                        if (!_isActive) return;
+                        
+                        // 스캔 감지 시 즉시 비활성화하여 중복 스캔 방지
+                        setState(() {
+                          _isActive = false;
+                        });
+                        
+                        debugPrint('QRScanPage - QR 코드 감지됨: $qrData');
 
-                        // 스캐너 중지 후 다음 화면으로 이동
-                        scannerService.stopScanner();
-                        context.push('/form', extra: qrData);
+                        // 스캐너 중지 먼저 완료 후 화면 이동
+                        scannerService.stopScanner().then((_) {
+                          debugPrint('QRScanPage - 스캐너 중지됨, 페이지 이동');
+                          
+                          // 진행 중 스캔 강제 취소 
+                          ref.read(qRScanControllerProvider.notifier).resetScanner();
+                          
+                          // 지연 후 페이지 이동 (확실한 스캐너 중지를 위해)
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) {
+                              context.push('/form', extra: qrData);
+                            }
+                          });
+                        });
                       }
                     },
+                  ) : Container(
+                    color: Colors.black,
+                    child: const Center(
+                      child: Text(
+                        '카메라 초기화 중...',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -178,6 +361,31 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+
+  // 폼 화면으로 직접 이동하는 버튼
+  Widget _buildDirectFormButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          // QR 없이 직접 폼 화면으로 이동
+          context.push('/form', extra: 'direct_input:');
+        },
+        icon: const Icon(Icons.edit_note),
+        label: const Text('QR 없이 직접 입력하기'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.blue,
+          elevation: 1,
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Colors.blue, width: 1),
+          ),
+        ),
       ),
     );
   }

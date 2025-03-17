@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pmgoroshi/presentation/pages/qr_scan/qr_scan_page.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_page.dart';
 import 'package:pmgoroshi/presentation/pages/completion/completion_page.dart';
+import 'package:pmgoroshi/main.dart' show routeObserver;
 
 part 'app_router.g.dart';
 
@@ -11,6 +12,7 @@ part 'app_router.g.dart';
 GoRouter appRouter(AppRouterRef ref) {
   return GoRouter(
     initialLocation: '/scan',
+    observers: [routeObserver],
     routes: [
       GoRoute(path: '/scan', builder: (context, state) => const QRScanPage()),
       GoRoute(

@@ -108,10 +108,23 @@ class DataFormPage extends ConsumerWidget {
   }
 
   Widget _buildQrDataCard(BuildContext context, String qrData, WidgetRef ref) {
+    // 컨트롤러를 명시적으로 변수에 할당
+    final controller = ref.read(dataFormControllerProvider(qrData).notifier);
+    
+    // qrData 상태를 관찰하여 변경될 때 UI 업데이트 (회사 선택 시)
+    final currentQrData = ref.watch(
+      dataFormControllerProvider(qrData).select((s) => s.qrData)
+    );
+    
+    // 현재 상태의 qrData를 기반으로 파싱
+    final infoFuture = controller.parseQrData(currentQrData);
+    
+    // 직접 입력 모드 또는 수동 선택 모드 여부 확인
+    final isDirectInputMode = currentQrData.startsWith('direct_input:');
+    final isManuallySelected = currentQrData.startsWith('manual_selected:');
+
     return FutureBuilder<(String, String?)>(
-      future: ref
-          .read(dataFormControllerProvider(qrData).notifier)
-          .parseQrData(qrData),
+      future: infoFuture,
       builder: (context, snapshot) {
         String companyName = "로딩 중...";
         String? serialNumber;
@@ -137,15 +150,19 @@ class DataFormPage extends ConsumerWidget {
                         color: const Color(0xFF3B82F6).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.qr_code,
-                        color: Color(0xFF3B82F6),
+                      child: Icon(
+                        isDirectInputMode || isManuallySelected 
+                            ? Icons.business 
+                            : Icons.qr_code,
+                        color: const Color(0xFF3B82F6),
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'QR 코드 정보',
+                      isDirectInputMode || isManuallySelected 
+                          ? '회사 정보' 
+                          : 'QR 코드 정보',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -154,21 +171,26 @@ class DataFormPage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    qrData,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade800,
-                      fontFamily: 'monospace',
+                
+                // 직접 입력 모드 또는 수동 선택 모드면 항상 회사 선택 UI 표시
+                if (isDirectInputMode || isManuallySelected)
+                  _buildCompanySelector(context, controller, companyName)
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      currentQrData,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade800,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 16),
                 // 업체 정보 표시
                 Container(
@@ -201,31 +223,156 @@ class DataFormPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // 시리얼 넘버 표시
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      child: Text(
-                        '시리얼 번호',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade700,
+                // 시리얼 넘버 표시 (직접 입력 모드가 아닐 때만)
+                if (!isDirectInputMode && !isManuallySelected)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          '시리얼 번호',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade700,
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        serialNumber ?? '알 수 없음',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          serialNumber ?? '알 수 없음',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  // 회사 선택 위젯
+  Widget _buildCompanySelector(BuildContext context, DataFormController controller, String currentCompanyName) {
+    // 이미 회사가 선택되었는지 확인
+    final bool hasSelectedCompany = currentCompanyName != '회사를 선택해주세요' && 
+                                    currentCompanyName != '로딩 중...' &&
+                                    currentCompanyName != '오류 발생';
+    
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.business, size: 20, color: Colors.grey.shade600),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  hasSelectedCompany 
+                      ? currentCompanyName 
+                      : '회사를 선택하세요',
+                  style: TextStyle(
+                    color: hasSelectedCompany 
+                        ? Colors.black 
+                        : Colors.grey.shade700,
+                    fontWeight: hasSelectedCompany 
+                        ? FontWeight.bold 
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 100, // 명시적인 너비 지정
+                child: ElevatedButton(
+                  onPressed: () => _showCompanySelectionDialog(context, controller),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(hasSelectedCompany ? '변경하기' : '선택하기'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 회사 선택 다이얼로그
+  Future<void> _showCompanySelectionDialog(BuildContext context, DataFormController controller) async {
+    // 회사 목록 가져오기
+    final companies = await controller.getCompanyList();
+    
+    if (!context.mounted) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  child: Row(
+                    children: [
+                      const Text(
+                        '회사 선택',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    itemCount: companies.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final companyName = companies[index];
+                      return ListTile(
+                        title: Text(companyName),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // 선택한 회사 정보 업데이트
+                          controller.updateSelectedCompany(companyName);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

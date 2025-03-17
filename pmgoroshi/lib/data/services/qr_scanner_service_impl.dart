@@ -43,37 +43,68 @@ class QRScannerServiceImpl implements QRScannerService {
   Stream<ScanResult?> get scanResultStream => _scanResultController.stream;
 
   @override
-  Future<void> startScanner() async {
-    final hasPermission = await permissionHandler.checkPermission(
-      Permission.camera,
-    );
-
-    if (!hasPermission) {
-      final status = await permissionHandler.requestCameraPermission();
-      if (status != PermissionStatus.granted) {
-        throw PlatformException(
-          code: 'PERMISSION_DENIED',
-          message: '카메라 권한이 필요합니다',
-        );
+  Future<bool> startScan() async {
+    try {
+      // 이미 스캔 중이면 재시작할 필요 없음
+      if (_isScanning) {
+        return true;
       }
-    }
 
-    await _controller.start();
-    _isScanning = true;
+      // 권한 체크
+      final hasPermission = await permissionHandler.checkPermission(
+        Permission.camera,
+      );
+
+      if (!hasPermission) {
+        final status = await permissionHandler.requestCameraPermission();
+        if (status != PermissionStatus.granted) {
+          throw PlatformException(
+            code: 'PERMISSION_DENIED',
+            message: '카메라 권한이 필요합니다',
+          );
+        }
+      }
+
+      await _controller.start();
+      _isScanning = true;
+      return true;
+    } catch (e) {
+      _isScanning = false;
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> stopScan() async {
+    try {
+      if (!_isScanning) {
+        return true;
+      }
+      
+      await _controller.stop();
+      _isScanning = false;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> startScanner() async {
+    await startScan();
   }
 
   @override
   Future<void> stopScanner() async {
-    await _controller.stop();
-    _isScanning = false;
+    await stopScan();
   }
 
   @override
   Future<void> toggleScanner() async {
     if (_isScanning) {
-      await stopScanner();
+      await stopScan();
     } else {
-      await startScanner();
+      await startScan();
     }
   }
 
