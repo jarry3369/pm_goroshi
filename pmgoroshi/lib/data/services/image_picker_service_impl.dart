@@ -1,9 +1,13 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:pmgoroshi/core/permissions/permission_handler.dart';
 import 'package:pmgoroshi/domain/services/image_picker_service.dart';
-import 'package:flutter/foundation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'image_picker_service_impl.g.dart';
 
@@ -13,55 +17,110 @@ class ImagePickerServiceImpl implements ImagePickerService {
   final AppPermissionHandler permissionHandler;
   final ImagePicker _picker = ImagePicker();
 
-  @override
-  Future<String?> pickImageFromGallery() async {
-    final result = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      maxHeight: 1200,
-      imageQuality: 85,
+  // 이미지 압축 및 최적화
+  Future<String> _compressAndOptimizeImage(String imagePath) async {
+    final File imageFile = File(imagePath);
+    final int originalSize = await imageFile.length();
+
+    // 임시 디렉토리 가져오기
+    final tempDir = await getTemporaryDirectory();
+    final targetPath = path.join(
+      tempDir.path,
+      '${DateTime.now().millisecondsSinceEpoch}.jpg',
     );
 
-    return result?.path;
+    // 이미지 크기에 따른 압축 품질 설정
+    int quality = 85; // 기본 품질
+    if (originalSize > 5 * 1024 * 1024) {
+      // 5MB 이상
+      quality = 60;
+    } else if (originalSize > 2 * 1024 * 1024) {
+      // 2MB 이상
+      quality = 70;
+    }
+
+    try {
+      final result = await FlutterImageCompress.compressAndGetFile(
+        imagePath,
+        targetPath,
+        quality: quality,
+        format: CompressFormat.jpeg,
+        minWidth: 1200,
+        minHeight: 1200,
+      );
+
+      if (result == null) {
+        print('이미지 압축 실패: $imagePath');
+        return imagePath; // 압축 실패 시 원본 반환
+      }
+
+      final compressedSize = await result.length();
+      print(
+        '이미지 압축 결과: ${originalSize / 1024}KB -> ${compressedSize / 1024}KB',
+      );
+
+      return result.path;
+    } catch (e) {
+      print('이미지 압축 중 오류 발생: $e');
+      return imagePath; // 에러 발생 시 원본 반환
+    }
+  }
+
+  @override
+  Future<String?> pickImageFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      );
+
+      if (image != null) {
+        return await _compressAndOptimizeImage(image.path);
+      }
+      return null;
+    } catch (e) {
+      print('갤러리에서 이미지 선택 중 오류 발생: $e');
+      return null;
+    }
   }
 
   @override
   Future<List<String>> pickMultipleImagesFromGallery() async {
-    final result = await _picker.pickMultiImage(
-      maxWidth: 1200,
-      maxHeight: 1200,
-      imageQuality: 85,
-    );
+    try {
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 100,
+      );
 
-    // null 안전 처리 및 경로 목록 반환
-    return result.map((image) => image.path).toList();
+      if (images.isEmpty) return [];
+
+      final List<String> compressedImages = [];
+      for (final image in images) {
+        final compressedPath = await _compressAndOptimizeImage(image.path);
+        compressedImages.add(compressedPath);
+      }
+
+      return compressedImages;
+    } catch (e) {
+      print('여러 이미지 선택 중 오류 발생: $e');
+      return [];
+    }
   }
 
   @override
   Future<String?> pickImageFromCamera() async {
     try {
-      debugPrint('카메라로 사진 촬영 시도');
-      final result = await _picker.pickImage(
+      final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 85,
+        imageQuality: 100,
       );
 
-      if (result == null) {
-        debugPrint('사용자가 사진 촬영을 취소함');
-        return null;
+      if (image != null) {
+        return await _compressAndOptimizeImage(image.path);
       }
-
-      debugPrint('사진 촬영 성공: ${result.path}');
-      return result.path;
+      return null;
     } catch (e) {
-      debugPrint('카메라 에러 발생: $e');
-      // 실제 카메라 접근 실패시에만 권한 관련 메시지 표시
-      if (e.toString().contains('camera_access_denied')) {
-        throw '카메라를 사용할 수 없습니다. 설정에서 권한을 허용해주세요.';
-      }
-      rethrow;
+      print('카메라로 이미지 촬영 중 오류 발생: $e');
+      return null;
     }
   }
 }

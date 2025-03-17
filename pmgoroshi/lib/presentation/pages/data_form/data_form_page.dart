@@ -1080,10 +1080,10 @@ class SubmitButtonSection extends ConsumerWidget {
                     context.go(
                       '/completion',
                       extra: {
-                        'isSuccess': result.isSuccess,
-                        'errorMessage': result.errorMessage,
+                        'isSuccess': result.$1,
+                        'errorMessage': result.$3,
                         'submissionTime':
-                            result.data?.submissionTime.toIso8601String() ??
+                            result.$2?.submissionTime.toIso8601String() ??
                             DateTime.now().toIso8601String(),
                       },
                     );
