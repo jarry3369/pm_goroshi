@@ -3,12 +3,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/data/services/image_picker_service_impl.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_state.dart';
-import 'package:pmgoroshi/data/services/api_service.dart'; // API 서비스 추가
-import 'package:pmgoroshi/data/services/location_service.dart'; // 위치 서비스 추가
-import 'package:pmgoroshi/domain/entities/violation_type.dart'; // 위반 유형 추가
+import 'package:pmgoroshi/data/services/api_service.dart';
+import 'package:pmgoroshi/data/services/location_service.dart';
+import 'package:pmgoroshi/domain/entities/violation_type.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:pmgoroshi/data/services/supabase_service.dart'; // Supabase 서비스 추가
+import 'package:pmgoroshi/data/services/supabase_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 part 'data_form_controller.g.dart';
 
@@ -216,18 +217,47 @@ class DataFormController extends _$DataFormController {
 
   // 카메라로 이미지 촬영
   Future<void> pickImageFromCamera() async {
+    debugPrint('카메라 촬영 시작');
+
     // 이미지 개수 체크
     const int maxImages = 5;
     if (state.imagePaths.length >= maxImages) {
-      return; // 이미 최대 개수면 아무 작업도 하지 않음
+      debugPrint('이미 최대 이미지 개수에 도달함');
+      return;
     }
 
-    final imagePickerService = ref.read(imagePickerServiceProvider);
-    final imagePath = await imagePickerService.pickImageFromCamera();
+    // 로딩 상태 설정
+    state = state.copyWith(isImageLoading: true, errorMessage: null);
+    debugPrint('카메라 로딩 상태 설정');
 
-    if (imagePath != null) {
+    try {
+      final imagePickerService = ref.read(imagePickerServiceProvider);
+      debugPrint('이미지 피커 서비스 호출');
+      final imagePath = await imagePickerService.pickImageFromCamera();
+
+      // 사용자가 취소한 경우 조용히 처리
+      if (imagePath == null) {
+        debugPrint('사용자가 카메라 촬영을 취소함');
+        state = state.copyWith(isImageLoading: false);
+        return;
+      }
+
+      debugPrint('이미지 경로 업데이트: $imagePath');
       final updatedImagePaths = [...state.imagePaths, imagePath];
       _updateImagePaths(updatedImagePaths);
+
+      // 성공 시 에러 메시지 제거
+      state = state.copyWith(isImageLoading: false, errorMessage: null);
+      debugPrint('카메라 촬영 완료');
+    } catch (e) {
+      debugPrint('카메라 에러 발생: $e');
+      // 에러 발생 시 구체적인 에러 메시지 설정
+      state = state.copyWith(isImageLoading: false, errorMessage: e.toString());
+
+      // 권한 관련 에러인 경우 앱 설정으로 이동하도록 안내
+      if (e.toString().contains('카메라 권한')) {
+        await openAppSettings();
+      }
     }
   }
 
@@ -240,19 +270,19 @@ class DataFormController extends _$DataFormController {
     _updateImagePaths(updatedImages);
   }
 
-  // QR 코드 데이터 파싱해서 회사명과 시리얼 번호 추출
+  // QR 코드 데이터 파싱해서 업체명과 시리얼 번호 추출
   Future<(String companyName, String? serialNumber)> parseQrData(
     String qrData,
   ) async {
     try {
       // 직접 입력 모드 확인
       if (qrData.startsWith('direct_input:')) {
-        return ('회사를 선택해주세요', null);
+        return ('업체를 선택해주세요', null);
       }
-      
-      // 수동 선택된 회사명 확인
+
+      // 수동 선택된 업체명 확인
       if (qrData.startsWith('manual_selected:')) {
-        // manual_selected: 접두사 제거하고 직접 선택된 회사명 사용
+        // manual_selected: 접두사 제거하고 직접 선택된 업체명 사용
         final companyName = qrData.substring('manual_selected:'.length);
         return (companyName, null);
       }
@@ -294,32 +324,33 @@ class DataFormController extends _$DataFormController {
     }
   }
 
-  // 회사 목록 조회 (중복 제거된 목록)
+  // 업체 목록 조회 (중복 제거된 목록)
   Future<List<String>> getCompanyList() async {
     try {
       final supabaseService = SupabaseService();
       final companyMappings = await supabaseService.getCompanyMapping();
-      
-      // 회사명 목록 추출 (중복 제거)
-      final companyNames = companyMappings.entries
-          .map((e) => e.value['name'] as String)
-          .toSet() // Set으로 변환하여 중복 제거
-          .toList();
-      
+
+      // 업체명 목록 추출 (중복 제거)
+      final companyNames =
+          companyMappings.entries
+              .map((e) => e.value['name'] as String)
+              .toSet() // Set으로 변환하여 중복 제거
+              .toList();
+
       // 알파벳 순 정렬
       companyNames.sort();
-      
+
       return companyNames;
     } catch (e) {
-      debugPrint('회사 목록 조회 오류: $e');
+      debugPrint('업체 목록 조회 오류: $e');
       return [];
     }
   }
-  
-  // 회사명 선택 업데이트
+
+  // 업체명 선택 업데이트
   void updateSelectedCompany(String companyName) {
-    debugPrint('회사 선택: $companyName');
-    
+    debugPrint('업체 선택: $companyName');
+
     // 상태 업데이트 (qrData 변경)
     final newQrData = 'manual_selected:$companyName';
     state = state.copyWith(
@@ -332,7 +363,7 @@ class DataFormController extends _$DataFormController {
       violationType: state.violationType,
       errorMessage: null,
     );
-    
+
     // 직접 상태 변경 후 상태를 리빌드하기 위해 강제로 상태 재설정
     state = state;
   }

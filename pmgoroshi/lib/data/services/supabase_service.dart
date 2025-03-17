@@ -29,7 +29,7 @@ class SupabaseService {
 
       return companyMap;
     } catch (e) {
-      debugPrint('회사 매핑 데이터 가져오기 오류: $e');
+      debugPrint('업체 매핑 데이터 가져오기 오류: $e');
       // 에러 발생 시 빈 맵 반환
       return {};
     }

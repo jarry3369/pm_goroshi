@@ -19,6 +19,15 @@ class AppPermissionHandler {
 
   /// 카메라 권한만 요청
   Future<PermissionStatus> requestCameraPermission() async {
+    // 현재 권한 상태 확인
+    final status = await Permission.camera.status;
+
+    // 이미 권한이 있으면 현재 상태 반환
+    if (status.isGranted) {
+      return status;
+    }
+
+    // 권한이 없으면 요청
     return await Permission.camera.request();
   }
 
@@ -30,6 +39,11 @@ class AppPermissionHandler {
   /// 권한 상태 확인
   Future<bool> checkPermission(Permission permission) async {
     return await permission.isGranted;
+  }
+
+  /// 권한 상태 가져오기
+  Future<PermissionStatus> getPermissionStatus(Permission permission) async {
+    return await permission.status;
   }
 
   /// 앱 시작 시 위치 권한 요청

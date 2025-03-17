@@ -7,6 +7,7 @@ import 'package:pmgoroshi/presentation/pages/data_form/data_form_controller.dart
 import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/domain/entities/violation_type.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // DataFormPage를 다시 ConsumerWidget으로 변경
 class DataFormPage extends ConsumerWidget {
@@ -110,15 +111,15 @@ class DataFormPage extends ConsumerWidget {
   Widget _buildQrDataCard(BuildContext context, String qrData, WidgetRef ref) {
     // 컨트롤러를 명시적으로 변수에 할당
     final controller = ref.read(dataFormControllerProvider(qrData).notifier);
-    
-    // qrData 상태를 관찰하여 변경될 때 UI 업데이트 (회사 선택 시)
+
+    // qrData 상태를 관찰하여 변경될 때 UI 업데이트 (업체 선택 시)
     final currentQrData = ref.watch(
-      dataFormControllerProvider(qrData).select((s) => s.qrData)
+      dataFormControllerProvider(qrData).select((s) => s.qrData),
     );
-    
+
     // 현재 상태의 qrData를 기반으로 파싱
     final infoFuture = controller.parseQrData(currentQrData);
-    
+
     // 직접 입력 모드 또는 수동 선택 모드 여부 확인
     final isDirectInputMode = currentQrData.startsWith('direct_input:');
     final isManuallySelected = currentQrData.startsWith('manual_selected:');
@@ -151,8 +152,8 @@ class DataFormPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        isDirectInputMode || isManuallySelected 
-                            ? Icons.business 
+                        isDirectInputMode || isManuallySelected
+                            ? Icons.business
                             : Icons.qr_code,
                         color: const Color(0xFF3B82F6),
                         size: 20,
@@ -160,8 +161,8 @@ class DataFormPage extends ConsumerWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      isDirectInputMode || isManuallySelected 
-                          ? '회사 정보' 
+                      isDirectInputMode || isManuallySelected
+                          ? '업체 정보'
                           : 'QR 코드 정보',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -171,8 +172,8 @@ class DataFormPage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
-                // 직접 입력 모드 또는 수동 선택 모드면 항상 회사 선택 UI 표시
+
+                // 직접 입력 모드 또는 수동 선택 모드면 항상 업체 선택 UI 표시
                 if (isDirectInputMode || isManuallySelected)
                   _buildCompanySelector(context, controller, companyName)
                 else
@@ -254,13 +255,18 @@ class DataFormPage extends ConsumerWidget {
     );
   }
 
-  // 회사 선택 위젯
-  Widget _buildCompanySelector(BuildContext context, DataFormController controller, String currentCompanyName) {
-    // 이미 회사가 선택되었는지 확인
-    final bool hasSelectedCompany = currentCompanyName != '회사를 선택해주세요' && 
-                                    currentCompanyName != '로딩 중...' &&
-                                    currentCompanyName != '오류 발생';
-    
+  // 업체 선택 위젯
+  Widget _buildCompanySelector(
+    BuildContext context,
+    DataFormController controller,
+    String currentCompanyName,
+  ) {
+    // 이미 업체가 선택되었는지 확인
+    final bool hasSelectedCompany =
+        currentCompanyName != '업체를 선택해주세요' &&
+        currentCompanyName != '로딩 중...' &&
+        currentCompanyName != '오류 발생';
+
     return Column(
       children: [
         Container(
@@ -277,25 +283,29 @@ class DataFormPage extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  hasSelectedCompany 
-                      ? currentCompanyName 
-                      : '회사를 선택하세요',
+                  hasSelectedCompany ? currentCompanyName : '업체를 선택하세요',
                   style: TextStyle(
-                    color: hasSelectedCompany 
-                        ? Colors.black 
-                        : Colors.grey.shade700,
-                    fontWeight: hasSelectedCompany 
-                        ? FontWeight.bold 
-                        : FontWeight.normal,
+                    color:
+                        hasSelectedCompany
+                            ? Colors.black
+                            : Colors.grey.shade700,
+                    fontWeight:
+                        hasSelectedCompany
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                   ),
                 ),
               ),
               SizedBox(
                 width: 100, // 명시적인 너비 지정
                 child: ElevatedButton(
-                  onPressed: () => _showCompanySelectionDialog(context, controller),
+                  onPressed:
+                      () => _showCompanySelectionDialog(context, controller),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                   ),
@@ -309,13 +319,16 @@ class DataFormPage extends ConsumerWidget {
     );
   }
 
-  // 회사 선택 다이얼로그
-  Future<void> _showCompanySelectionDialog(BuildContext context, DataFormController controller) async {
-    // 회사 목록 가져오기
+  // 업체 선택 다이얼로그
+  Future<void> _showCompanySelectionDialog(
+    BuildContext context,
+    DataFormController controller,
+  ) async {
+    // 업체 목록 가져오기
     final companies = await controller.getCompanyList();
-    
+
     if (!context.mounted) return;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -332,11 +345,14 @@ class DataFormPage extends ConsumerWidget {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 24,
+                  ),
                   child: Row(
                     children: [
                       const Text(
-                        '회사 선택',
+                        '업체 선택',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -363,7 +379,7 @@ class DataFormPage extends ConsumerWidget {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.pop(context);
-                          // 선택한 회사 정보 업데이트
+                          // 선택한 업체 정보 업데이트
                           controller.updateSelectedCompany(companyName);
                         },
                       );
@@ -974,9 +990,8 @@ class ErrorMessageSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final errorMessage = ref.watch(
-      dataFormControllerProvider(qrData).select((s) => s.errorMessage),
-    );
+    final state = ref.watch(dataFormControllerProvider(qrData));
+    final errorMessage = state.errorMessage;
 
     if (errorMessage == null) {
       return const SizedBox.shrink();
@@ -988,24 +1003,47 @@ class ErrorMessageSection extends ConsumerWidget {
         color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.error_outline,
-              color: Colors.red.shade700,
-              size: 18,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.error_outline,
+                  color: Colors.red.shade700,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  errorMessage,
+                  style: TextStyle(color: Colors.red.shade700, height: 1.5),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              errorMessage,
-              style: TextStyle(color: Colors.red.shade700, height: 1.5),
+          if (errorMessage.contains('카메라 권한'))
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      await openAppSettings();
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text('설정으로 이동'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

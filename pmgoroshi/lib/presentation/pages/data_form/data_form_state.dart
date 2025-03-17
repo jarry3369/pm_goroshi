@@ -9,16 +9,16 @@ part 'data_form_state.freezed.dart';
 class DataFormState with _$DataFormState {
   const factory DataFormState({
     required String qrData,
-    required String description,
     @Default([]) List<String> imagePaths,
+    required String description,
     @Default(false) bool isSubmitting,
     @Default(false) bool isSuccess,
+    @Default(false) bool isImageLoading,
+    @Default(false) bool isLocationLoading,
     String? errorMessage,
     String? location,
     Position? position,
     ViolationType? violationType,
-    @Default(false) bool isLocationLoading,
-    @Default(false) bool isImageLoading,
   }) = _DataFormState;
 
   factory DataFormState.initial(String qrData) =>
