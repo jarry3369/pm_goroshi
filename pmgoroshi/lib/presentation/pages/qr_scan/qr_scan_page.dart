@@ -11,6 +11,8 @@ import 'package:pmgoroshi/core/permissions/permission_handler.dart';
 import 'package:pmgoroshi/data/services/location_service.dart';
 import 'package:pmgoroshi/data/services/supabase_service.dart';
 import 'package:pmgoroshi/main.dart' show routeObserver;
+import 'package:pmgoroshi/presentation/widgets/banner_carousel.dart';
+import 'package:pmgoroshi/presentation/controllers/banner_provider.dart';
 
 class QRScanPage extends ConsumerStatefulWidget {
   const QRScanPage({super.key});
@@ -22,6 +24,7 @@ class QRScanPage extends ConsumerStatefulWidget {
 class _QRScanPageState extends ConsumerState<QRScanPage>
     with WidgetsBindingObserver, RouteAware {
   bool _isActive = false; // 페이지가 현재 활성 상태인지 추적
+  bool _bannerShown = false; // 배너가 이미 표시되었는지 여부
 
   @override
   void initState() {
@@ -32,6 +35,45 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
     // 권한 체크 후 스캐너 초기화
     _checkPermissionsAndInitialize();
+
+    // 배너 로딩 및 표시 (지연 실행)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('QRScanPage - 배너 로딩 시작');
+
+      // 데이터 리프레시를 위해 provider를 직접 호출하여 배너 로드
+      ref.read(bannerProvider.notifier).refreshBanners().then((_) {
+        debugPrint('QRScanPage - 배너 리프레시 완료, 배너 표시 시도');
+
+        // 배너 모달 직접 표시
+        final bannersAsync = ref.read(displayableBannersProvider);
+
+        bannersAsync.when(
+          data: (banners) {
+            debugPrint(
+              'QRScanPage - displayableBannersProvider 데이터: ${banners.length}개',
+            );
+            if (banners.isNotEmpty && !_bannerShown) {
+              debugPrint('QRScanPage - 표시할 배너가 있어 모달 표시');
+
+              // 약간의 지연 후 모달 표시 (UI가 완전히 그려진 후)
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (_isActive && !_bannerShown) {
+                  _bannerShown = true;
+                  _showBannerModal(context);
+                }
+              });
+            } else {
+              debugPrint(
+                'QRScanPage - 표시할 배너가 없거나 이미 표시됨 (isEmpty=${banners.isEmpty}, bannerShown=$_bannerShown)',
+              );
+            }
+          },
+          loading: () => debugPrint('QRScanPage - 배너 데이터 로딩 중...'),
+          error:
+              (error, stack) => debugPrint('QRScanPage - 배너 데이터 로드 오류: $error'),
+        );
+      });
+    });
   }
 
   @override
@@ -43,6 +85,13 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     final route = ModalRoute.of(context);
     if (route != null) {
       routeObserver.subscribe(this, route as PageRoute);
+    }
+
+    // 배너가 아직 표시되지 않았다면 표시
+    if (!_bannerShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkAndShowBanner();
+      });
     }
   }
 
@@ -240,6 +289,8 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
             const SizedBox(height: 20),
             _buildScanInstructions(),
             const SizedBox(height: 20),
+            _buildBannerCarousel(),
+            const SizedBox(height: 20),
             _buildDirectFormButton(context),
             const SizedBox(height: 40),
           ],
@@ -381,6 +432,43 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     );
   }
 
+  // 배너 카루셀 위젯
+  Widget _buildBannerCarousel() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Center(
+        child: OutlinedButton.icon(
+          icon: const Icon(Icons.campaign_outlined),
+          label: const Text('캠페인 확인하기'),
+          onPressed: () => _showBannerModal(context),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            side: const BorderSide(color: Colors.blue),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 배너 모달 표시
+  void _showBannerModal(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (context) => Dialog(
+            insetPadding: EdgeInsets.zero,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: const BannerCarousel(
+              height: 520,
+              showIndicator: true,
+              autoPlay: true,
+            ),
+          ),
+    );
+  }
+
   // 폼 화면으로 직접 이동하는 버튼
   Widget _buildDirectFormButton(BuildContext context) {
     return Padding(
@@ -403,6 +491,37 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
           ),
         ),
       ),
+    );
+  }
+
+  // 배너가 있는지 확인하고 표시
+  void _checkAndShowBanner() {
+    debugPrint('배너 표시 확인 시작...');
+    final bannersAsync = ref.read(displayableBannersProvider);
+
+    // 배너 데이터가 있고, 표시할 배너가 있으면 표시
+    bannersAsync.when(
+      data: (banners) {
+        debugPrint('배너 데이터 로드 완료: ${banners.length}개');
+        if (banners.isNotEmpty) {
+          debugPrint('표시할 배너가 있습니다: ${banners.length}개');
+          for (int i = 0; i < banners.length; i++) {
+            debugPrint('배너[$i] - ${banners[i].title}');
+          }
+
+          if (!_bannerShown) {
+            debugPrint('배너 모달 표시 시작');
+            _bannerShown = true;
+            _showBannerModal(context);
+          } else {
+            debugPrint('배너가 이미 표시되었습니다.');
+          }
+        } else {
+          debugPrint('표시할 배너가 없습니다.');
+        }
+      },
+      loading: () => debugPrint('배너 데이터 로딩 중...'),
+      error: (error, stack) => debugPrint('배너 데이터 로드 오류: $error'),
     );
   }
 }
