@@ -396,6 +396,8 @@ class DataFormController extends _$DataFormController {
         imagePaths: state.imagePaths,
         submissionTime: DateTime.now(),
         location: state.location!,
+        latitude: state.position?.latitude,
+        longitude: state.position?.longitude,
         violationType: state.violationType!,
         companyName: companyName,
         serialNumber: serialNumber,

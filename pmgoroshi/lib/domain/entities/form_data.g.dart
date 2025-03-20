@@ -15,6 +15,8 @@ _$SubmissionDataImpl _$$SubmissionDataImplFromJson(Map<String, dynamic> json) =>
           .toList(),
       submissionTime: DateTime.parse(json['submissionTime'] as String),
       location: json['location'] as String,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       companyName: json['companyName'] as String,
       serialNumber: json['serialNumber'] as String?,
       violationType:
@@ -29,6 +31,8 @@ Map<String, dynamic> _$$SubmissionDataImplToJson(
       'imagePaths': instance.imagePaths,
       'submissionTime': instance.submissionTime.toIso8601String(),
       'location': instance.location,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
       'companyName': instance.companyName,
       'serialNumber': instance.serialNumber,
       'violationType': _violationTypeToJson(instance.violationType),

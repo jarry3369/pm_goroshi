@@ -17,16 +17,16 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$DataFormState {
   String get qrData => throw _privateConstructorUsedError;
-  String get description => throw _privateConstructorUsedError;
   List<String> get imagePaths => throw _privateConstructorUsedError;
+  String get description => throw _privateConstructorUsedError;
   bool get isSubmitting => throw _privateConstructorUsedError;
   bool get isSuccess => throw _privateConstructorUsedError;
+  bool get isImageLoading => throw _privateConstructorUsedError;
+  bool get isLocationLoading => throw _privateConstructorUsedError;
   String? get errorMessage => throw _privateConstructorUsedError;
   String? get location => throw _privateConstructorUsedError;
   Position? get position => throw _privateConstructorUsedError;
   ViolationType? get violationType => throw _privateConstructorUsedError;
-  bool get isLocationLoading => throw _privateConstructorUsedError;
-  bool get isImageLoading => throw _privateConstructorUsedError;
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.
@@ -43,16 +43,16 @@ abstract class $DataFormStateCopyWith<$Res> {
   @useResult
   $Res call(
       {String qrData,
-      String description,
       List<String> imagePaths,
+      String description,
       bool isSubmitting,
       bool isSuccess,
+      bool isImageLoading,
+      bool isLocationLoading,
       String? errorMessage,
       String? location,
       Position? position,
-      ViolationType? violationType,
-      bool isLocationLoading,
-      bool isImageLoading});
+      ViolationType? violationType});
 
   $ViolationTypeCopyWith<$Res>? get violationType;
 }
@@ -73,30 +73,30 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
   @override
   $Res call({
     Object? qrData = null,
-    Object? description = null,
     Object? imagePaths = null,
+    Object? description = null,
     Object? isSubmitting = null,
     Object? isSuccess = null,
+    Object? isImageLoading = null,
+    Object? isLocationLoading = null,
     Object? errorMessage = freezed,
     Object? location = freezed,
     Object? position = freezed,
     Object? violationType = freezed,
-    Object? isLocationLoading = null,
-    Object? isImageLoading = null,
   }) {
     return _then(_value.copyWith(
       qrData: null == qrData
           ? _value.qrData
           : qrData // ignore: cast_nullable_to_non_nullable
               as String,
-      description: null == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String,
       imagePaths: null == imagePaths
           ? _value.imagePaths
           : imagePaths // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      description: null == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String,
       isSubmitting: null == isSubmitting
           ? _value.isSubmitting
           : isSubmitting // ignore: cast_nullable_to_non_nullable
@@ -104,6 +104,14 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
       isSuccess: null == isSuccess
           ? _value.isSuccess
           : isSuccess // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isImageLoading: null == isImageLoading
+          ? _value.isImageLoading
+          : isImageLoading // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLocationLoading: null == isLocationLoading
+          ? _value.isLocationLoading
+          : isLocationLoading // ignore: cast_nullable_to_non_nullable
               as bool,
       errorMessage: freezed == errorMessage
           ? _value.errorMessage
@@ -121,14 +129,6 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
           ? _value.violationType
           : violationType // ignore: cast_nullable_to_non_nullable
               as ViolationType?,
-      isLocationLoading: null == isLocationLoading
-          ? _value.isLocationLoading
-          : isLocationLoading // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isImageLoading: null == isImageLoading
-          ? _value.isImageLoading
-          : isImageLoading // ignore: cast_nullable_to_non_nullable
-              as bool,
     ) as $Val);
   }
 
@@ -157,16 +157,16 @@ abstract class _$$DataFormStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {String qrData,
-      String description,
       List<String> imagePaths,
+      String description,
       bool isSubmitting,
       bool isSuccess,
+      bool isImageLoading,
+      bool isLocationLoading,
       String? errorMessage,
       String? location,
       Position? position,
-      ViolationType? violationType,
-      bool isLocationLoading,
-      bool isImageLoading});
+      ViolationType? violationType});
 
   @override
   $ViolationTypeCopyWith<$Res>? get violationType;
@@ -186,30 +186,30 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? qrData = null,
-    Object? description = null,
     Object? imagePaths = null,
+    Object? description = null,
     Object? isSubmitting = null,
     Object? isSuccess = null,
+    Object? isImageLoading = null,
+    Object? isLocationLoading = null,
     Object? errorMessage = freezed,
     Object? location = freezed,
     Object? position = freezed,
     Object? violationType = freezed,
-    Object? isLocationLoading = null,
-    Object? isImageLoading = null,
   }) {
     return _then(_$DataFormStateImpl(
       qrData: null == qrData
           ? _value.qrData
           : qrData // ignore: cast_nullable_to_non_nullable
               as String,
-      description: null == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String,
       imagePaths: null == imagePaths
           ? _value._imagePaths
           : imagePaths // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      description: null == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String,
       isSubmitting: null == isSubmitting
           ? _value.isSubmitting
           : isSubmitting // ignore: cast_nullable_to_non_nullable
@@ -217,6 +217,14 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
       isSuccess: null == isSuccess
           ? _value.isSuccess
           : isSuccess // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isImageLoading: null == isImageLoading
+          ? _value.isImageLoading
+          : isImageLoading // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLocationLoading: null == isLocationLoading
+          ? _value.isLocationLoading
+          : isLocationLoading // ignore: cast_nullable_to_non_nullable
               as bool,
       errorMessage: freezed == errorMessage
           ? _value.errorMessage
@@ -234,14 +242,6 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
           ? _value.violationType
           : violationType // ignore: cast_nullable_to_non_nullable
               as ViolationType?,
-      isLocationLoading: null == isLocationLoading
-          ? _value.isLocationLoading
-          : isLocationLoading // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isImageLoading: null == isImageLoading
-          ? _value.isImageLoading
-          : isImageLoading // ignore: cast_nullable_to_non_nullable
-              as bool,
     ));
   }
 }
@@ -251,22 +251,20 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
 class _$DataFormStateImpl implements _DataFormState {
   const _$DataFormStateImpl(
       {required this.qrData,
-      required this.description,
       final List<String> imagePaths = const [],
+      required this.description,
       this.isSubmitting = false,
       this.isSuccess = false,
+      this.isImageLoading = false,
+      this.isLocationLoading = false,
       this.errorMessage,
       this.location,
       this.position,
-      this.violationType,
-      this.isLocationLoading = false,
-      this.isImageLoading = false})
+      this.violationType})
       : _imagePaths = imagePaths;
 
   @override
   final String qrData;
-  @override
-  final String description;
   final List<String> _imagePaths;
   @override
   @JsonKey()
@@ -277,11 +275,19 @@ class _$DataFormStateImpl implements _DataFormState {
   }
 
   @override
+  final String description;
+  @override
   @JsonKey()
   final bool isSubmitting;
   @override
   @JsonKey()
   final bool isSuccess;
+  @override
+  @JsonKey()
+  final bool isImageLoading;
+  @override
+  @JsonKey()
+  final bool isLocationLoading;
   @override
   final String? errorMessage;
   @override
@@ -290,16 +296,10 @@ class _$DataFormStateImpl implements _DataFormState {
   final Position? position;
   @override
   final ViolationType? violationType;
-  @override
-  @JsonKey()
-  final bool isLocationLoading;
-  @override
-  @JsonKey()
-  final bool isImageLoading;
 
   @override
   String toString() {
-    return 'DataFormState(qrData: $qrData, description: $description, imagePaths: $imagePaths, isSubmitting: $isSubmitting, isSuccess: $isSuccess, errorMessage: $errorMessage, location: $location, position: $position, violationType: $violationType, isLocationLoading: $isLocationLoading, isImageLoading: $isImageLoading)';
+    return 'DataFormState(qrData: $qrData, imagePaths: $imagePaths, description: $description, isSubmitting: $isSubmitting, isSuccess: $isSuccess, isImageLoading: $isImageLoading, isLocationLoading: $isLocationLoading, errorMessage: $errorMessage, location: $location, position: $position, violationType: $violationType)';
   }
 
   @override
@@ -308,14 +308,18 @@ class _$DataFormStateImpl implements _DataFormState {
         (other.runtimeType == runtimeType &&
             other is _$DataFormStateImpl &&
             (identical(other.qrData, qrData) || other.qrData == qrData) &&
-            (identical(other.description, description) ||
-                other.description == description) &&
             const DeepCollectionEquality()
                 .equals(other._imagePaths, _imagePaths) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
             (identical(other.isSubmitting, isSubmitting) ||
                 other.isSubmitting == isSubmitting) &&
             (identical(other.isSuccess, isSuccess) ||
                 other.isSuccess == isSuccess) &&
+            (identical(other.isImageLoading, isImageLoading) ||
+                other.isImageLoading == isImageLoading) &&
+            (identical(other.isLocationLoading, isLocationLoading) ||
+                other.isLocationLoading == isLocationLoading) &&
             (identical(other.errorMessage, errorMessage) ||
                 other.errorMessage == errorMessage) &&
             (identical(other.location, location) ||
@@ -323,27 +327,23 @@ class _$DataFormStateImpl implements _DataFormState {
             (identical(other.position, position) ||
                 other.position == position) &&
             (identical(other.violationType, violationType) ||
-                other.violationType == violationType) &&
-            (identical(other.isLocationLoading, isLocationLoading) ||
-                other.isLocationLoading == isLocationLoading) &&
-            (identical(other.isImageLoading, isImageLoading) ||
-                other.isImageLoading == isImageLoading));
+                other.violationType == violationType));
   }
 
   @override
   int get hashCode => Object.hash(
       runtimeType,
       qrData,
-      description,
       const DeepCollectionEquality().hash(_imagePaths),
+      description,
       isSubmitting,
       isSuccess,
+      isImageLoading,
+      isLocationLoading,
       errorMessage,
       location,
       position,
-      violationType,
-      isLocationLoading,
-      isImageLoading);
+      violationType);
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.
@@ -357,27 +357,31 @@ class _$DataFormStateImpl implements _DataFormState {
 abstract class _DataFormState implements DataFormState {
   const factory _DataFormState(
       {required final String qrData,
-      required final String description,
       final List<String> imagePaths,
+      required final String description,
       final bool isSubmitting,
       final bool isSuccess,
+      final bool isImageLoading,
+      final bool isLocationLoading,
       final String? errorMessage,
       final String? location,
       final Position? position,
-      final ViolationType? violationType,
-      final bool isLocationLoading,
-      final bool isImageLoading}) = _$DataFormStateImpl;
+      final ViolationType? violationType}) = _$DataFormStateImpl;
 
   @override
   String get qrData;
   @override
-  String get description;
-  @override
   List<String> get imagePaths;
+  @override
+  String get description;
   @override
   bool get isSubmitting;
   @override
   bool get isSuccess;
+  @override
+  bool get isImageLoading;
+  @override
+  bool get isLocationLoading;
   @override
   String? get errorMessage;
   @override
@@ -386,10 +390,6 @@ abstract class _DataFormState implements DataFormState {
   Position? get position;
   @override
   ViolationType? get violationType;
-  @override
-  bool get isLocationLoading;
-  @override
-  bool get isImageLoading;
 
   /// Create a copy of DataFormState
   /// with the given fields replaced by the non-null parameter values.

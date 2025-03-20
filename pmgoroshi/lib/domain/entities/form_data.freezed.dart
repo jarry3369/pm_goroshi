@@ -25,6 +25,8 @@ mixin _$SubmissionData {
   List<String> get imagePaths => throw _privateConstructorUsedError;
   DateTime get submissionTime => throw _privateConstructorUsedError;
   String get location => throw _privateConstructorUsedError;
+  double? get latitude => throw _privateConstructorUsedError;
+  double? get longitude => throw _privateConstructorUsedError;
   String get companyName => throw _privateConstructorUsedError;
   String? get serialNumber => throw _privateConstructorUsedError;
   @JsonKey(toJson: _violationTypeToJson)
@@ -52,6 +54,8 @@ abstract class $SubmissionDataCopyWith<$Res> {
       List<String> imagePaths,
       DateTime submissionTime,
       String location,
+      double? latitude,
+      double? longitude,
       String companyName,
       String? serialNumber,
       @JsonKey(toJson: _violationTypeToJson) ViolationType violationType});
@@ -79,6 +83,8 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
     Object? imagePaths = null,
     Object? submissionTime = null,
     Object? location = null,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
     Object? companyName = null,
     Object? serialNumber = freezed,
     Object? violationType = null,
@@ -104,6 +110,14 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String,
+      latitude: freezed == latitude
+          ? _value.latitude
+          : latitude // ignore: cast_nullable_to_non_nullable
+              as double?,
+      longitude: freezed == longitude
+          ? _value.longitude
+          : longitude // ignore: cast_nullable_to_non_nullable
+              as double?,
       companyName: null == companyName
           ? _value.companyName
           : companyName // ignore: cast_nullable_to_non_nullable
@@ -144,6 +158,8 @@ abstract class _$$SubmissionDataImplCopyWith<$Res>
       List<String> imagePaths,
       DateTime submissionTime,
       String location,
+      double? latitude,
+      double? longitude,
       String companyName,
       String? serialNumber,
       @JsonKey(toJson: _violationTypeToJson) ViolationType violationType});
@@ -170,6 +186,8 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
     Object? imagePaths = null,
     Object? submissionTime = null,
     Object? location = null,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
     Object? companyName = null,
     Object? serialNumber = freezed,
     Object? violationType = null,
@@ -195,6 +213,14 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
               as String,
+      latitude: freezed == latitude
+          ? _value.latitude
+          : latitude // ignore: cast_nullable_to_non_nullable
+              as double?,
+      longitude: freezed == longitude
+          ? _value.longitude
+          : longitude // ignore: cast_nullable_to_non_nullable
+              as double?,
       companyName: null == companyName
           ? _value.companyName
           : companyName // ignore: cast_nullable_to_non_nullable
@@ -220,6 +246,8 @@ class _$SubmissionDataImpl implements _SubmissionData {
       required final List<String> imagePaths,
       required this.submissionTime,
       required this.location,
+      this.latitude,
+      this.longitude,
       required this.companyName,
       this.serialNumber,
       @JsonKey(toJson: _violationTypeToJson) required this.violationType})
@@ -245,6 +273,10 @@ class _$SubmissionDataImpl implements _SubmissionData {
   @override
   final String location;
   @override
+  final double? latitude;
+  @override
+  final double? longitude;
+  @override
   final String companyName;
   @override
   final String? serialNumber;
@@ -254,7 +286,7 @@ class _$SubmissionDataImpl implements _SubmissionData {
 
   @override
   String toString() {
-    return 'SubmissionData(qrData: $qrData, description: $description, imagePaths: $imagePaths, submissionTime: $submissionTime, location: $location, companyName: $companyName, serialNumber: $serialNumber, violationType: $violationType)';
+    return 'SubmissionData(qrData: $qrData, description: $description, imagePaths: $imagePaths, submissionTime: $submissionTime, location: $location, latitude: $latitude, longitude: $longitude, companyName: $companyName, serialNumber: $serialNumber, violationType: $violationType)';
   }
 
   @override
@@ -271,6 +303,10 @@ class _$SubmissionDataImpl implements _SubmissionData {
                 other.submissionTime == submissionTime) &&
             (identical(other.location, location) ||
                 other.location == location) &&
+            (identical(other.latitude, latitude) ||
+                other.latitude == latitude) &&
+            (identical(other.longitude, longitude) ||
+                other.longitude == longitude) &&
             (identical(other.companyName, companyName) ||
                 other.companyName == companyName) &&
             (identical(other.serialNumber, serialNumber) ||
@@ -288,6 +324,8 @@ class _$SubmissionDataImpl implements _SubmissionData {
       const DeepCollectionEquality().hash(_imagePaths),
       submissionTime,
       location,
+      latitude,
+      longitude,
       companyName,
       serialNumber,
       violationType);
@@ -316,6 +354,8 @@ abstract class _SubmissionData implements SubmissionData {
       required final List<String> imagePaths,
       required final DateTime submissionTime,
       required final String location,
+      final double? latitude,
+      final double? longitude,
       required final String companyName,
       final String? serialNumber,
       @JsonKey(toJson: _violationTypeToJson)
@@ -334,6 +374,10 @@ abstract class _SubmissionData implements SubmissionData {
   DateTime get submissionTime;
   @override
   String get location;
+  @override
+  double? get latitude;
+  @override
+  double? get longitude;
   @override
   String get companyName;
   @override

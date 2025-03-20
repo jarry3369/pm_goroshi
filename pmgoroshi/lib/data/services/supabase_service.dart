@@ -133,6 +133,8 @@ class SupabaseService {
           'image_urls': data.imagePaths,
           'submission_time': data.submissionTime.toIso8601String(),
           'location': data.location,
+          'latitude': data.latitude,
+          'longitude': data.longitude,
           'company_name': data.companyName,
           'serial_number': data.serialNumber,
           'violation_type': data.violationType.toJson(),

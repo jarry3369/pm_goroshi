@@ -12,6 +12,8 @@ class SubmissionData with _$SubmissionData {
     required List<String> imagePaths,
     required DateTime submissionTime,
     required String location,
+    double? latitude,
+    double? longitude,
     required String companyName,
     String? serialNumber,
     @JsonKey(toJson: _violationTypeToJson) required ViolationType violationType,

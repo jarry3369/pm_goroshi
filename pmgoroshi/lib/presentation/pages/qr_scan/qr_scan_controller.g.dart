@@ -6,7 +6,7 @@ part of 'qr_scan_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$qRScanControllerHash() => r'6b3c6a8c474cef037dd48c3b824d449de2a7ec06';
+String _$qRScanControllerHash() => r'd9943404c84bdf1e0080af83cc6731491ac4b3a9';
 
 /// See also [QRScanController].
 @ProviderFor(QRScanController)
