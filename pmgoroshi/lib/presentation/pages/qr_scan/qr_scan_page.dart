@@ -13,6 +13,7 @@ import 'package:pmgoroshi/data/services/supabase_service.dart';
 import 'package:pmgoroshi/main.dart' show routeObserver;
 import 'package:pmgoroshi/presentation/widgets/banner_carousel.dart';
 import 'package:pmgoroshi/presentation/controllers/banner_provider.dart';
+import 'package:pmgoroshi/presentation/pages/data_form/data_form_page.dart';
 
 class QRScanPage extends ConsumerStatefulWidget {
   const QRScanPage({super.key});
@@ -214,12 +215,25 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
       // 카메라 권한이 있는 경우에만 초기화
       if (hasCamera) {
         debugPrint('QRScanPage - 권한 확인 완료, 스캐너 컨트롤러 초기화 시작');
+
+        // 스캐너 상태 리셋 먼저 수행 (충돌 방지)
+        ref.read(qRScanControllerProvider.notifier).resetScanner();
+        await Future.delayed(const Duration(milliseconds: 300));
+
         // 0.5초 지연 후 초기화 - 더 안정적인 초기화를 위해
         await Future.delayed(const Duration(milliseconds: 500));
         if (_isActive) {
           // 다시 활성 상태 확인
           await ref.read(qRScanControllerProvider.notifier).initialize();
           debugPrint('QRScanPage - 스캐너 컨트롤러 초기화 완료');
+
+          // 상태 명시적으로 다시 활성화 (확실히 활성 상태로 만들기)
+          if (mounted) {
+            setState(() {
+              _isActive = true;
+            });
+            debugPrint('QRScanPage - 스캐너 초기화 완료 후 _isActive=true로 설정');
+          }
         } else {
           debugPrint('QRScanPage - 스캐너 초기화 도중 페이지가 비활성화됨');
         }
@@ -234,51 +248,31 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
   @override
   Widget build(BuildContext context) {
-    // QR 스캔 결과 스트림 구독 방식 개선
-    ref.listen(
-      qrScannerServiceProvider.select((service) => service.scanResultStream),
-      (previous, next) {
-        // 이전 구독을 취소하고 새로운 구독 설정
-        if (previous != next) {
-          debugPrint('QRScanPage - QR 스캔 스트림 변경 감지');
+    // QR 스캔 결과 스트림 구독 (라우팅용)
+    ref.listen(scanResultForRoutingProvider, (previous, next) {
+      // QR 스캔 결과 스트림에서 결과가 도착한 경우에만 실행
+      if (next.hasValue && _isActive) {
+        final result = next.value!;
+        debugPrint('QRScanPage - 라우팅 스트림에서 QR 결과 수신: ${result.qrData}');
 
-          // 변수 선언해서 나중에 취소할 수 있도록 함
-          StreamSubscription<ScanResult?>? streamSubscription;
+        // 중복 처리 방지
+        setState(() {
+          _isActive = false;
+        });
 
-          streamSubscription = next.listen((result) {
-            // 활성 상태일 때만 결과 처리 + 중복 처리 방지
-            if (result != null && _isActive) {
-              debugPrint('QRScanPage - QR 스캔 결과 수신: ${result.qrData}');
-
-              // 즉시 스트림 구독 취소
-              streamSubscription?.cancel();
-
-              // 중복 처리 방지를 위해 즉시 비활성화
-              setState(() {
-                _isActive = false;
-              });
-
-              // 스캐너 중지 및 컨트롤러 리셋
-              final scannerService = ref.read(qrScannerServiceProvider);
-              scannerService.stopScanner().then((_) {
-                debugPrint('QRScanPage - 스트림에서 스캐너 중지됨');
-
-                // 컨트롤러 리셋
-                ref.read(qRScanControllerProvider.notifier).resetScanner();
-
-                // 지연 후 페이지 이동
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  if (mounted) {
-                    debugPrint('QRScanPage - 스트림에서 페이지 이동');
-                    context.push('/form', extra: result.qrData);
-                  }
-                });
-              });
-            }
-          });
+        // 스캐너 중지 확인
+        final scannerService = ref.read(qrScannerServiceProvider);
+        if (scannerService.isScanning) {
+          debugPrint('QRScanPage - 스캐너가 아직 실행 중임, 명시적 중지 시도');
+          scannerService.stopScanner();
         }
-      },
-    );
+
+        // 컨트롤러 리셋
+        ref.read(qRScanControllerProvider.notifier).resetScanner();
+
+        _performNavigation(context, result.qrData);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('QR 코드 스캔'), centerTitle: true),
@@ -324,7 +318,7 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
                               torchEnabled: false,
                             ),
                             onDetect: (capture) {
-                              // 이미 비활성 상태면 스캔 처리하지 않음
+                              // MobileScanner에서 QR 코드 감지 시 적극적으로 처리
                               if (!_isActive) {
                                 debugPrint('QRScanPage - 비활성 상태에서 스캔, 무시');
                                 return;
@@ -334,36 +328,29 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
                               if (barcodes.isNotEmpty &&
                                   barcodes.first.rawValue != null) {
                                 final qrData = barcodes.first.rawValue!;
+                                debugPrint(
+                                  'QRScanPage - onDetect: QR 코드 감지됨: $qrData',
+                                );
 
-                                // 이미 스캔 처리 중이면 추가 처리 방지
-                                if (!_isActive) return;
-
-                                // 스캔 감지 시 즉시 비활성화하여 중복 스캔 방지
+                                // 중복 처리 방지를 위해 즉시 비활성화
                                 setState(() {
                                   _isActive = false;
                                 });
 
-                                debugPrint('QRScanPage - QR 코드 감지됨: $qrData');
+                                // 스캐너 즉시 중지
+                                final scannerService = ref.read(
+                                  qrScannerServiceProvider,
+                                );
+                                scannerService.stopScanner();
 
-                                // 스캐너 중지 먼저 완료 후 화면 이동
-                                scannerService.stopScanner().then((_) {
-                                  debugPrint('QRScanPage - 스캐너 중지됨, 페이지 이동');
-
-                                  // 진행 중 스캔 강제 취소
-                                  ref
-                                      .read(qRScanControllerProvider.notifier)
-                                      .resetScanner();
-
-                                  // 지연 후 페이지 이동 (확실한 스캐너 중지를 위해)
-                                  Future.delayed(
-                                    const Duration(milliseconds: 300),
-                                    () {
-                                      if (mounted) {
-                                        context.push('/form', extra: qrData);
-                                      }
-                                    },
-                                  );
-                                });
+                                // QR 값을 ScanResult로 변환하여 직접 스트림에 전달
+                                final result = ScanResult(
+                                  qrData: qrData,
+                                  scanTime: DateTime.now(),
+                                );
+                                ref
+                                    .read(qRScanControllerProvider.notifier)
+                                    .handleRawScanResult(result);
                               }
                             },
                           )
@@ -469,6 +456,48 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     );
   }
 
+  // 화면 이동을 위한 별도 메서드 (코드 중복 방지)
+  void _performNavigation(BuildContext context, String qrData) {
+    // 지연 후 페이지 이동 시도 - 지연 시간 증가 (안정화)
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (!mounted) {
+        debugPrint('QRScanPage - 페이지 이동 불가: mounted=false');
+        return;
+      }
+
+      debugPrint('QRScanPage - 페이지 이동 시도, qrData: $qrData');
+
+      // 데이터폼 페이지로 직접 이동 (import 추가 필요)
+      try {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => DataFormPage(qrData: qrData)),
+        );
+        debugPrint('QRScanPage - MaterialPageRoute 직접 이동 성공');
+        return; // 성공했으면 종료
+      } catch (e) {
+        debugPrint('QRScanPage - MaterialPageRoute 직접 이동 실패: $e');
+      }
+
+      // Navigator.pushNamed 시도
+      try {
+        Navigator.of(context).pushNamed('/form', arguments: qrData);
+        debugPrint('QRScanPage - Navigator.pushNamed 성공!');
+        return; // 성공했으면 종료
+      } catch (e) {
+        debugPrint('QRScanPage - Navigator.pushNamed 실패: $e');
+      }
+
+      // Go Router 시도
+      try {
+        context.push('/form', extra: qrData);
+        debugPrint('QRScanPage - Go Router로 이동 성공!');
+      } catch (e) {
+        debugPrint('QRScanPage - 모든 라우팅 방법 실패: $e');
+      }
+    });
+  }
+
   // 폼 화면으로 직접 이동하는 버튼
   Widget _buildDirectFormButton(BuildContext context) {
     return Padding(
@@ -476,7 +505,8 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
       child: ElevatedButton.icon(
         onPressed: () {
           // QR 없이 직접 폼 화면으로 이동
-          context.push('/form', extra: 'direct_input:');
+          debugPrint('QRScanPage - 직접 입력 버튼 클릭: 페이지 이동 시도');
+          _performNavigation(context, 'direct_input:');
         },
         icon: const Icon(Icons.edit_note),
         label: const Text('QR 없이 직접 입력하기'),
