@@ -180,10 +180,6 @@ class SupabaseService {
         }
       } else {
         debugPrint('배너가 존재하지 않습니다. 테이블을 확인하세요.');
-
-        // 샘플 배너 추가 (테스트 용도)
-        await _addSampleBanner();
-        return getActiveBanners(); // 재귀 호출로 다시 시도
       }
 
       // 필터를 적용한 Supabase 쿼리 실행
@@ -291,50 +287,12 @@ class SupabaseService {
 
       debugPrint('배너 변환 후 결과 수: ${result.length}');
 
-      if (result.isEmpty) {
-        debugPrint('표시할 배너가 없습니다. 샘플 배너를 추가합니다.');
-        await _addSampleBanner();
-        // 샘플 배너 추가 후 다시 시도
-        return getActiveBanners();
-      }
-
       debugPrint('============= 배너 조회 완료 =============');
       return result;
     } catch (e) {
       debugPrint('활성 배너 가져오기 오류: $e');
       debugPrint('스택 트레이스: ${StackTrace.current}');
       return [];
-    }
-  }
-
-  /// 테스트를 위한 샘플 배너 추가
-  Future<void> _addSampleBanner() async {
-    try {
-      debugPrint('샘플 배너 추가 시도...');
-      final now = DateTime.now().toUtc();
-      final bannerId = const Uuid().v4();
-
-      // 모든 필수 필드가 포함된 샘플 배너
-      final Map<String, dynamic> bannerData = {
-        'id': bannerId,
-        'title': '테스트 배너',
-        'content': '샘플 테스트 배너입니다. 배너가 잘 표시되는지 확인해보세요.',
-        'is_active': true,
-        'start_date': now.subtract(const Duration(days: 1)).toIso8601String(),
-        'end_date': now.add(const Duration(days: 30)).toIso8601String(),
-        'priority': 1,
-        'timestamp': now.toIso8601String(),
-        'image_url': 'https://via.placeholder.com/400x200?text=Test+Banner',
-        'action_type': 'none',
-        'action_url': '',
-      };
-
-      debugPrint('샘플 배너 데이터: $bannerData');
-      await _client.from(_bannerTable).insert(bannerData);
-      debugPrint('샘플 배너 추가 성공 (ID: $bannerId)');
-    } catch (e) {
-      debugPrint('샘플 배너 추가 실패: $e');
-      debugPrint('스택 트레이스: ${StackTrace.current}');
     }
   }
 
