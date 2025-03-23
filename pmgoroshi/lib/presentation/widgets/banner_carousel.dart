@@ -105,7 +105,7 @@ class _BannerCarouselState extends ConsumerState<BannerCarousel> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('현재 표시할 캠페인이 없습니다', style: TextStyle(fontSize: 16)),
+          const Text('현재 공지사항이 없습니다', style: TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),

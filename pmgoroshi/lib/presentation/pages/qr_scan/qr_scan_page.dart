@@ -283,8 +283,6 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
             const SizedBox(height: 20),
             _buildScanInstructions(),
             const SizedBox(height: 20),
-            _buildBannerCarousel(),
-            const SizedBox(height: 20),
             _buildDirectFormButton(context),
             const SizedBox(height: 40),
           ],
@@ -415,24 +413,6 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-
-  // 배너 카루셀 위젯
-  Widget _buildBannerCarousel() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Center(
-        child: OutlinedButton.icon(
-          icon: const Icon(Icons.campaign_outlined),
-          label: const Text('캠페인 확인하기'),
-          onPressed: () => _showBannerModal(context),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            side: const BorderSide(color: Colors.blue),
-          ),
-        ),
       ),
     );
   }
