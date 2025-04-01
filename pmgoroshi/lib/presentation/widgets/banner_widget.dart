@@ -24,180 +24,100 @@ class BannerWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 배경색 설정 (기본은 보라색 계열)
-    final backgroundColor = _getBackgroundColor();
+    final textColor = _getTextColor(Color(0xFFF5F5F5));
+    // _buildHeader(),
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // 배너 내용
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 배너 이미지를 최상단에 표시 (있는 경우)
-              if (banner.image_url != null)
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9, // 카드와 동일한 비율
-                    child: CachedNetworkImage(
-                      imageUrl: banner.image_url!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
-                  ),
-                ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
 
-              // 배너 내용
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      banner.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      banner.content,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 16),
-                    // 확인 버튼
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () => _handleButtonTap(context, ref),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 30,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text(banner.button_text ?? '확인하기'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
 
-          // 배너 카운터 (오른쪽 상단)
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '$currentIndex/$totalCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
+          children: [
+            // 이미지 영역 (있는 경우에만)
+            if (banner.image_url != null) _buildImageSection(),
 
-          // 타입 라벨 (왼쪽 상단)
-          Positioned(top: 16, left: 16, child: _buildTypeLabel()),
-        ],
-      ),
-    );
-  }
-
-  // 타입 라벨 위젯
-  Widget _buildTypeLabel() {
-    final label = banner.type_label ?? _getDefaultTypeLabel();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.pink,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+            // 콘텐츠 영역
+            _buildContentSection(context, textColor),
+          ],
         ),
       ),
     );
   }
 
-  // 배너 색상 가져오기
-  Color _getBackgroundColor() {
-    if (banner.background_color != null) {
-      // 16진수 문자열로부터 Color 객체 생성
-      try {
-        final hexColor = banner.background_color!;
-        if (hexColor.startsWith('#')) {
-          return Color(int.parse('0xFF${hexColor.substring(1)}'));
-        }
-        return Color(int.parse('0xFF$hexColor'));
-      } catch (e) {
-        // 파싱 실패시 기본 색상 반환
-      }
-    }
-
-    // 타입별 기본 색상
-    switch (banner.banner_type) {
-      case app_banner.BannerType.video:
-        return const Color(0xFF5E35B1);
-      case app_banner.BannerType.image:
-        return const Color(0xFF4527A0);
-      case app_banner.BannerType.cinema:
-        return const Color(0xFF1A1A1A);
-      case app_banner.BannerType.basic:
-      default:
-        return const Color(0xFF3949AB);
-    }
+  // 이미지 섹션
+  Widget _buildImageSection() {
+    return Container(
+      height: 200,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade200,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: CachedNetworkImage(
+          imageUrl: banner.image_url!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          placeholder:
+              (context, url) => Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.grey.shade400,
+                  ),
+                ),
+              ),
+          errorWidget:
+              (context, url, error) => const Icon(
+                Icons.image_not_supported,
+                color: Colors.grey,
+                size: 48,
+              ),
+        ),
+      ),
+    );
   }
 
-  // 기본 타입 라벨 가져오기
-  String _getDefaultTypeLabel() {
-    switch (banner.banner_type) {
-      case app_banner.BannerType.video:
-        return '동영상형';
-      case app_banner.BannerType.image:
-        return '이미지형';
-      case app_banner.BannerType.cinema:
-        return '시네마형';
-      case app_banner.BannerType.basic:
-      default:
-        return '기본형';
-    }
+  // 콘텐츠 섹션
+  Widget _buildContentSection(BuildContext context, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 제목
+          Text(
+            banner.title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 내용
+          Text(
+            banner.content,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.black54,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 배경색에 따른 텍스트 색상 결정
+  Color _getTextColor(Color backgroundColor) {
+    // 배경색이 어두운지 확인
+    final luminance = backgroundColor.computeLuminance();
+    return luminance > 0.5 ? Colors.black : Colors.white;
   }
 
   // 버튼 클릭 처리

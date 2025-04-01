@@ -83,7 +83,11 @@ class _BannerCarouselState extends ConsumerState<BannerCarousel> {
         debugPrint('BannerCarousel: 로딩 중...');
         return SizedBox(
           height: widget.height,
-          child: const Center(child: CircularProgressIndicator()),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+            ),
+          ),
         );
       },
       error: (error, stack) {
@@ -96,20 +100,55 @@ class _BannerCarouselState extends ConsumerState<BannerCarousel> {
   // 표시할 배너가 없을 때 보여줄 뷰
   Widget _buildNoBannersView(BuildContext context) {
     return Container(
-      height: 200,
+      height: 240,
       width: double.infinity,
+      margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('현재 공지사항이 없습니다', style: TextStyle(fontSize: 16)),
+          const Icon(
+            Icons.notifications_off_outlined,
+            size: 48,
+            color: Colors.grey,
+          ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('닫기'),
+          Text(
+            '현재 공지사항이 없습니다',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: Colors.black87),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('닫기'),
+            ),
           ),
         ],
       ),
@@ -124,41 +163,71 @@ class _BannerCarouselState extends ConsumerState<BannerCarousel> {
     return Container(
       height: widget.height,
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.1)),
-      child: Stack(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
         children: [
-          // 배너 페이지 뷰
-          PageView.builder(
-            controller: _pageController,
-            itemCount: banners.length,
-            itemBuilder: (context, index) {
-              final banner = banners[index];
-              // BannerWidget에 인덱스 정보 전달
-              return BannerWidget(
-                banner: banner,
-                onDismiss: () {
-                  // 마지막 배너를 닫은 경우 모달 자체를 닫음
-                  if (banners.length <= 1) {
-                    Navigator.of(context).pop();
-                  } else {
-                    ref.read(bannerProvider.notifier).dismissBanner(banner.id);
-                  }
-                },
-                // 인덱스 정보 추가
-                currentIndex: index + 1,
-                totalCount: banners.length,
-              );
-            },
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: banners.length,
+              itemBuilder: (context, index) {
+                final banner = banners[index];
+                // BannerWidget에 인덱스 정보 전달
+                return BannerWidget(
+                  banner: banner,
+                  onDismiss: () {
+                    // 마지막 배너를 닫은 경우 모달 자체를 닫음
+                    if (banners.length <= 1) {
+                      Navigator.of(context).pop();
+                    } else {
+                      ref
+                          .read(bannerProvider.notifier)
+                          .dismissBanner(banner.id);
+                    }
+                  },
+                  // 인덱스 정보 추가
+                  currentIndex: index + 1,
+                  totalCount: banners.length,
+                );
+              },
+            ),
           ),
 
-          // 하단 닫기/다시보지않기 버튼 (카드 바깥쪽)
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: _buildBottomControls(context, ref, banners),
-          ),
+          // 하단 표시자 (현재 페이지 표시)
+          if (widget.showIndicator && banners.length > 1)
+            _buildPageIndicator(banners.length),
+
+          // 하단 컨트롤 (닫기/다시보지않기)
+          _buildBottomControls(context, ref, banners),
         ],
+      ),
+    );
+  }
+
+  // 페이지 인디케이터 위젯
+  Widget _buildPageIndicator(int count) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(
+          count,
+          (index) => Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color:
+                  index == _currentPage
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey.shade300,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -169,43 +238,51 @@ class _BannerCarouselState extends ConsumerState<BannerCarousel> {
     WidgetRef ref,
     List<app_banner.Banner> banners,
   ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // 닫기 버튼
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.black.withOpacity(0.3),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 닫기 버튼
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black87,
+                side: BorderSide(color: Colors.grey.shade300),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('닫기'),
             ),
           ),
-          child: const Text('닫기'),
-        ),
-        const SizedBox(width: 16),
-        // 다시보지않기 버튼
-        TextButton(
-          onPressed: () {
-            final banner = banners[_currentPage];
-            ref
-                .read(bannerProvider.notifier)
-                .setDoNotShowAgain(banner.id, true);
-            Navigator.of(context).pop();
-          },
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.black.withOpacity(0.3),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: const Text('다시 보지 않기'),
-        ),
-      ],
+          const SizedBox(width: 12),
+
+          // 다시보지않기 버튼
+          // Expanded(
+          //   child: OutlinedButton(
+          //     onPressed: () {
+          //       final banner = banners[_currentPage];
+          //       ref
+          //           .read(bannerProvider.notifier)
+          //           .setDoNotShowAgain(banner.id, true);
+          //       Navigator.of(context).pop();
+          //     },
+          //     style: OutlinedButton.styleFrom(
+          //       foregroundColor: Colors.black87,
+          //       side: BorderSide(color: Colors.grey.shade300),
+          //       padding: const EdgeInsets.symmetric(vertical: 12),
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(12),
+          //       ),
+          //     ),
+          //     child: const Text('다시 보지 않기'),
+          //   ),
+          // ),
+        ],
+      ),
     );
   }
 }

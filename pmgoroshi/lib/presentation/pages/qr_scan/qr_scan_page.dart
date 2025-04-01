@@ -248,6 +248,8 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
   @override
   Widget build(BuildContext context) {
+    final unreadBannerCount = ref.watch(unreadBannerCountProvider);
+
     // QR 스캔 결과 스트림 구독 (라우팅용)
     ref.listen(scanResultForRoutingProvider, (previous, next) {
       // QR 스캔 결과 스트림에서 결과가 도착한 경우에만 실행
@@ -275,7 +277,53 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('QR 코드 스캔'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('QR 코드 스캔'),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications),
+                onPressed: () => _showBannerModal(context),
+              ),
+
+              // 읽지 않은 배너 수 표시기
+              unreadBannerCount.when(
+                data: (count) {
+                  if (count > 0) {
+                    return Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          count > 9 ? '9+' : '$count',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -422,15 +470,22 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     showDialog(
       context: context,
       barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
       builder:
           (context) => Dialog(
-            insetPadding: EdgeInsets.zero,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 24,
+            ),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            child: const BannerCarousel(
-              height: 520,
-              showIndicator: true,
-              autoPlay: true,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: const BannerCarousel(
+                height: 520,
+                showIndicator: true,
+                autoPlay: true,
+              ),
             ),
           ),
     );
