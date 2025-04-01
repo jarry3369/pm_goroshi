@@ -371,6 +371,8 @@ class DataFormController extends _$DataFormController {
   // 폼 제출
   Future<(bool, SubmissionData?, String?)> submitForm() async {
     try {
+      debugPrint('폼 제출 시작 - ${DateTime.now()}');
+
       // 이미 제출 중이면 중복 제출 방지
       if (state.isSubmitting) {
         return (false, null, '이미 제출 중입니다.');
@@ -388,6 +390,7 @@ class DataFormController extends _$DataFormController {
 
       // QR 코드 파싱
       final (companyName, serialNumber) = await parseQrData(state.qrData);
+      debugPrint('QR 코드 파싱 결과: 업체=$companyName, 시리얼=$serialNumber');
 
       // 현재 상태로 제출 데이터 생성
       final submissionData = SubmissionData(
@@ -409,21 +412,27 @@ class DataFormController extends _$DataFormController {
       try {
         // 이미지 업로드
         if (state.imagePaths.isNotEmpty) {
+          debugPrint('이미지 업로드 시작 (${state.imagePaths.length}개)');
           final uploadedImageUrls = await supabaseService.uploadImages(
             state.imagePaths,
           );
 
           if (uploadedImageUrls.isEmpty) {
+            debugPrint('이미지 업로드 실패: 업로드된 URL이 없음');
             throw '이미지 업로드에 실패했습니다.';
           }
+
+          debugPrint('이미지 업로드 완료: ${uploadedImageUrls.length}개');
 
           // 업로드된 이미지 URL로 업데이트된 데이터 생성
           final updatedData = submissionData.copyWith(
             imagePaths: uploadedImageUrls,
           );
 
+          debugPrint('리포트 데이터 저장 시작');
           // Supabase에 데이터 저장
           await supabaseService.saveReportData(updatedData);
+          debugPrint('리포트 데이터 저장 완료');
 
           // 제출 성공
           state = state.copyWith(
@@ -431,19 +440,27 @@ class DataFormController extends _$DataFormController {
             isSuccess: true,
             errorMessage: null,
           );
+          debugPrint('폼 제출 성공 완료 - ${DateTime.now()}');
           return (true, updatedData, null);
         } else {
           // 이미지가 없는 경우
+          debugPrint('이미지 없이 리포트 데이터 저장 시작');
           await supabaseService.saveReportData(submissionData);
+          debugPrint('리포트 데이터 저장 완료');
+
           state = state.copyWith(
             isSubmitting: false,
             isSuccess: true,
             errorMessage: null,
           );
+          debugPrint('폼 제출 성공 완료 - ${DateTime.now()}');
           return (true, submissionData, null);
         }
-      } catch (e) {
+      } catch (e, stack) {
         final errorMsg = '데이터 저장 중 오류가 발생했습니다: ${e.toString()}';
+        debugPrint('데이터 저장 오류: $e');
+        debugPrint('스택 트레이스: $stack');
+
         state = state.copyWith(
           isSubmitting: false,
           isSuccess: false,
@@ -451,8 +468,11 @@ class DataFormController extends _$DataFormController {
         );
         return (false, null, errorMsg);
       }
-    } catch (e) {
+    } catch (e, stack) {
       final errorMsg = '제출 중 오류가 발생했습니다: ${e.toString()}';
+      debugPrint('폼 제출 오류: $e');
+      debugPrint('스택 트레이스: $stack');
+
       state = state.copyWith(
         isSubmitting: false,
         isSuccess: false,

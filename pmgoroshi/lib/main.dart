@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pmgoroshi/firebase_options.dart';
 import 'package:pmgoroshi/presentation/routes/app_router.dart';
 import 'package:pmgoroshi/core/permissions/permission_handler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:pmgoroshi/data/services/push_notification_service.dart';
 
 // RouteObserver 전역 변수 정의
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase 초기화
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // supabase 초기화
   await Supabase.initialize(
@@ -41,6 +47,7 @@ class QRDataCollectorApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    ref.read(pushNotificationServiceProvider);
 
     return MaterialApp.router(
       title: 'QR 데이터 수집기',

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "141498894483",
+    "project_id": "pmgoroshi-68526",
+    "storage_bucket": "pmgoroshi-68526.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:141498894483:android:fe6b93ac3ec651e2936566",
+        "android_client_info": {
+          "package_name": "com.minestroneteam.pmgoroshi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzR2ABJJAVSFUPpJQrO43t3q0Q9re-OQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

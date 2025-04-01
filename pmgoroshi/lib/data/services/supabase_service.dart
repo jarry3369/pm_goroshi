@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
@@ -127,31 +129,6 @@ class SupabaseService {
       }
     } catch (e) {
       debugPrint('버킷 생성 오류: $e');
-    }
-  }
-
-  /// Supabase Database에 데이터 저장
-  Future<void> saveReportData(SubmissionData data) async {
-    try {
-      // 데이터베이스에 저장
-      await _client.from(_tableName).insert({
-        'content': {
-          'qr_data': data.qrData,
-          'description': data.description,
-          'image_urls': data.imagePaths,
-          'submission_time': data.submissionTime.toIso8601String(),
-          'location': data.location,
-          'latitude': data.latitude,
-          'longitude': data.longitude,
-          'company_name': data.companyName,
-          'serial_number': data.serialNumber,
-          'violation_type': data.violationType.toJson(),
-        },
-        'type': data.violationType.id,
-      });
-    } catch (e) {
-      debugPrint('데이터 저장 오류: $e');
-      throw Exception('데이터 저장 중 오류가 발생했습니다: $e');
     }
   }
 
@@ -307,5 +284,80 @@ class SupabaseService {
       debugPrint('배너 가져오기 오류: $e');
       return null;
     }
+  }
+
+  // 디바이스 토큰 업데이트 메소드 추가
+  Future<void> updateDeviceToken(String token) async {
+    try {
+      // final user = _client.auth.currentUser;
+      // if (user != null) {
+      //   // 사용자 정보 테이블에 디바이스 토큰 업데이트
+      //   await _client.from('user_devices').upsert({
+      //     'user_id': user.id,
+      //     'device_token': token,
+      //     'platform': Platform.isAndroid ? 'android' : 'ios',
+      //     'last_updated': DateTime.now().toIso8601String(),
+      //   }, onConflict: 'user_id, device_token');
+      //   debugPrint('디바이스 토큰 업데이트 완료');
+      // } else {
+      // 비로그인 상태에서는 임시 사용자 식별자 생성 및 저장
+      final prefs = await SharedPreferences.getInstance();
+      final deviceId = prefs.getString('device_id') ?? const Uuid().v4();
+      await prefs.setString('device_id', deviceId);
+
+      await _client.from('anonymous_devices').upsert({
+        'device_id': deviceId,
+        'device_token': token,
+        'platform': Platform.isAndroid ? 'android' : 'ios',
+        'last_updated': DateTime.now().toIso8601String(),
+      }, onConflict: 'device_id');
+      debugPrint('디바이스 토큰 업데이트 완료');
+      // }
+    } catch (e) {
+      debugPrint('디바이스 토큰 업데이트 오류: $e');
+    }
+  }
+
+  // 리포트 저장 시 디바이스 정보 포함
+  Future<void> saveReportData(SubmissionData data) async {
+    try {
+      // 디바이스 토큰 가져오기
+      final token = await FirebaseMessaging.instance.getToken();
+      final deviceId = await _getDeviceId();
+
+      // 데이터베이스에 저장
+      await _client.from(_tableName).insert({
+        'content': {
+          'qr_data': data.qrData,
+          'description': data.description,
+          'image_urls': data.imagePaths,
+          'submission_time': data.submissionTime.toIso8601String(),
+          'location': data.location,
+          'latitude': data.latitude,
+          'longitude': data.longitude,
+          'company_name': data.companyName,
+          'serial_number': data.serialNumber,
+          'violation_type': data.violationType.toJson(),
+        },
+        'type': data.violationType.id,
+        'device_token': token,
+        'device_id': deviceId,
+        'device_platform': Platform.isAndroid ? 'android' : 'ios',
+      });
+    } catch (e) {
+      debugPrint('데이터 저장 오류: $e');
+      throw Exception('데이터 저장 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  // 디바이스 ID 가져오기
+  Future<String> _getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final deviceId = prefs.getString('device_id');
+    if (deviceId != null) return deviceId;
+
+    final newDeviceId = const Uuid().v4();
+    await prefs.setString('device_id', newDeviceId);
+    return newDeviceId;
   }
 }
