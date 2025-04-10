@@ -20,7 +20,11 @@ serve(async (req) => {
     record?.content?.longitude
   })\nimages: ${record?.content?.image_urls
     .map((u, i) => `[link${i}](<${u}>)`)
-    .join(", ")}\n\`\`\`json${JSON.stringify(record?.content, null, 2)}\`\`\` `;
+    .join(", ")}\n\`\`\`json\n${JSON.stringify(
+    record?.content,
+    null,
+    2
+  )}\`\`\` `;
 
   const message = {
     content: string,
