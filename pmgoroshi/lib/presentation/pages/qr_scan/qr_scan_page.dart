@@ -276,66 +276,70 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('QR 코드 스캔'),
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications),
-                onPressed: () => _showBannerModal(context),
-              ),
+    return Column(
+      children: [
+        AppBar(
+          title: const Text('QR 코드 스캔'),
+          actions: [
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications),
+                  onPressed: () => _showBannerModal(context),
+                ),
 
-              // 읽지 않은 배너 수 표시기
-              unreadBannerCount.when(
-                data: (count) {
-                  if (count > 0) {
-                    return Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          count > 9 ? '9+' : '$count',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
+                // 읽지 않은 배너 수 표시기
+                unreadBannerCount.when(
+                  data: (count) {
+                    if (count > 0) {
+                      return Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          textAlign: TextAlign.center,
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            count > 9 ? '9+' : '$count',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(child: _buildScannerView()),
-            const SizedBox(height: 20),
-            _buildScanInstructions(),
-            const SizedBox(height: 20),
-            _buildDirectFormButton(context),
-            const SizedBox(height: 40),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ],
         ),
-      ),
+        Expanded(
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(child: _buildScannerView()),
+                const SizedBox(height: 20),
+                _buildScanInstructions(),
+                const SizedBox(height: 20),
+                _buildDirectFormButton(context),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -502,33 +506,25 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
       debugPrint('QRScanPage - 페이지 이동 시도, qrData: $qrData');
 
-      // 데이터폼 페이지로 직접 이동 (import 추가 필요)
-      try {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DataFormPage(qrData: qrData)),
-        );
-        debugPrint('QRScanPage - MaterialPageRoute 직접 이동 성공');
-        return; // 성공했으면 종료
-      } catch (e) {
-        debugPrint('QRScanPage - MaterialPageRoute 직접 이동 실패: $e');
-      }
-
-      // Navigator.pushNamed 시도
-      try {
-        Navigator.of(context).pushNamed('/form', arguments: qrData);
-        debugPrint('QRScanPage - Navigator.pushNamed 성공!');
-        return; // 성공했으면 종료
-      } catch (e) {
-        debugPrint('QRScanPage - Navigator.pushNamed 실패: $e');
-      }
-
-      // Go Router 시도
+      // Go Router 사용
       try {
         context.push('/form', extra: qrData);
         debugPrint('QRScanPage - Go Router로 이동 성공!');
       } catch (e) {
-        debugPrint('QRScanPage - 모든 라우팅 방법 실패: $e');
+        debugPrint('QRScanPage - Go Router 이동 실패: $e');
+
+        // 실패 시 MaterialPageRoute로 시도
+        try {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DataFormPage(qrData: qrData),
+            ),
+          );
+          debugPrint('QRScanPage - MaterialPageRoute 직접 이동 성공');
+        } catch (e) {
+          debugPrint('QRScanPage - 모든 라우팅 방법 실패: $e');
+        }
       }
     });
   }
