@@ -2,13 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pmgoroshi/data/services/supabase_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
 
 part 'report_provider.g.dart';
 
 // 신고 데이터 모델
 class ReportData {
   final String id;
-  final String title;
   final String imageUrl;
   final double latitude;
   final double longitude;
@@ -18,7 +18,6 @@ class ReportData {
 
   ReportData({
     required this.id,
-    required this.title,
     required this.imageUrl,
     required this.latitude,
     required this.longitude,
@@ -30,7 +29,6 @@ class ReportData {
   factory ReportData.fromJson(Map<String, dynamic> json) {
     return ReportData(
       id: json['id'] as String,
-      title: json['title'] as String? ?? '킥보드 신고',
       imageUrl: json['image_url'] as String,
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
@@ -52,12 +50,46 @@ class ReportDataNotifier extends _$ReportDataNotifier {
     try {
       final supabase = Supabase.instance.client;
       final response = await supabase
-          .from('submissions')
+          .from('reports')
           .select()
-          .order('reported_at', ascending: false);
+          .order('timestamp', ascending: false);
 
       return response
-          .map<ReportData>((data) => ReportData.fromJson(data))
+          .map<ReportData?>((data) {
+            try {
+              final Map<String, dynamic> content =
+                  data['content'] is String
+                      ? jsonDecode(data['content'] as String)
+                      : data['content'] as Map<String, dynamic>;
+
+              final DateTime timestamp = DateTime.parse(
+                data['timestamp'] as String,
+              );
+
+              return ReportData(
+                id: data['report_id'] as String? ?? data['id'] as String,
+                imageUrl:
+                    (content['image_urls'] as List<dynamic>?)?.isNotEmpty ==
+                            true
+                        ? content['image_urls'][0] as String
+                        : '',
+                latitude: (content['latitude'] as num?)?.toDouble() ?? 37.5666,
+                longitude:
+                    (content['longitude'] as num?)?.toDouble() ?? 126.9784,
+                reportedAt:
+                    content['submission_time'] != null
+                        ? DateTime.parse(content['submission_time'] as String)
+                        : timestamp,
+                address: content['location'] as String? ?? '위치 정보 없음',
+                description: content['description'] as String?,
+              );
+            } catch (e) {
+              // 데이터 변환 오류 발생 시 null 반환 (리스트에서 제외)
+              print('데이터 파싱 오류: $e, 데이터: \\${data['id']}');
+              return null;
+            }
+          })
+          .whereType<ReportData>()
           .toList();
     } catch (e) {
       // 오류 발생 시 빈 배열 반환

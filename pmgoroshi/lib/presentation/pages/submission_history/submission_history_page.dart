@@ -5,45 +5,6 @@ import 'package:pmgoroshi/presentation/controllers/report_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
-// 임시로 Provider를 직접 정의 (코드 생성기 실행 전까지)
-final reportDataProvider = FutureProvider<List<ReportData>>((ref) async {
-  // 예시 데이터 반환
-  return [
-    ReportData(
-      id: '1',
-      title: '불법 주차된 킥보드',
-      imageUrl: 'https://via.placeholder.com/400x300?text=Kickboard+1',
-      latitude: 37.566,
-      longitude: 126.978,
-      reportedAt: DateTime.now(),
-      address: '서울시 중구 세종대로',
-      description: '인도에 주차되어 보행자의 통행을 방해하고 있습니다.',
-    ),
-    ReportData(
-      id: '2',
-      title: '쓰러진 킥보드',
-      imageUrl: 'https://via.placeholder.com/400x300?text=Kickboard+2',
-      latitude: 37.557,
-      longitude: 126.970,
-      reportedAt: DateTime.now().subtract(const Duration(days: 1)),
-      address: '서울시 용산구 이태원로',
-      description: '도로 중앙에 쓰러져 있습니다.',
-    ),
-    ReportData(
-      id: '3',
-      title: '파손된 킥보드',
-      imageUrl: 'https://via.placeholder.com/400x300?text=Kickboard+3',
-      latitude: 37.575,
-      longitude: 126.973,
-      reportedAt: DateTime.now().subtract(const Duration(days: 2)),
-      address: '서울시 종로구 삼청동',
-      description: '배터리가 분리되어 있고 핸들이 파손되었습니다.',
-    ),
-  ];
-});
-
-final selectedReportIdProvider = StateProvider<String?>((ref) => null);
-
 class SubmissionHistoryPage extends ConsumerStatefulWidget {
   const SubmissionHistoryPage({Key? key}) : super(key: key);
 
@@ -62,21 +23,34 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
   // 선택된 마커의 정보 창
   NInfoWindow? _infoWindow;
 
+  // 이전 선택된 ID 저장
+  String? _previousSelectedId;
+
   @override
   void initState() {
     super.initState();
-    // 페이지 로드 시 신고 내역 새로고침 (실제 구현될 때까지 주석처리)
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   ref.read(reportDataNotifierProvider.notifier).refreshReports();
-    // });
+    // 페이지 로드 시 신고 내역 새로고침
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(reportDataNotifierProvider.notifier).refreshReports();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // 신고 데이터 가져오기 (임시 Provider 사용)
-    final reportsAsync = ref.watch(reportDataProvider);
+    // 신고 데이터 가져오기
+    final reportsAsync = ref.watch(reportDataNotifierProvider);
     // 현재 선택된 신고 ID
-    final selectedReportId = ref.watch(selectedReportIdProvider);
+    final selectedReportId = ref.watch(selectedReportProviderProvider);
+
+    // 선택된 ID가 변경되면 카메라 이동
+    if (selectedReportId != null &&
+        selectedReportId != _previousSelectedId &&
+        reportsAsync.hasValue) {
+      _moveCameraToReport(selectedReportId, reportsAsync.value!);
+      _previousSelectedId = selectedReportId;
+    } else if (selectedReportId == null) {
+      _previousSelectedId = null;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +60,7 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               // 새로고침
-              ref.refresh(reportDataProvider);
+              ref.read(reportDataNotifierProvider.notifier).refreshReports();
             },
           ),
         ],
@@ -100,18 +74,21 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
                 target: NLatLng(37.5666102, 126.9783881), // 서울 시청
                 zoom: 12,
               ),
+              rotationGesturesEnable: false,
             ),
             onMapReady: (controller) {
               _mapController = controller;
 
               // 신고 데이터가 이미 로드되었다면 마커 추가
               if (reportsAsync.hasValue) {
-                _addMarkersToMap(reportsAsync.value ?? []);
+                _addMarkersToMap(reportsAsync.value ?? [], initialLoad: true);
               }
             },
             onMapTapped: (point, latLng) {
               // 지도 탭하면 선택 해제
-              ref.read(selectedReportIdProvider.notifier).state = null;
+              ref
+                  .read(selectedReportProviderProvider.notifier)
+                  .clearSelection();
             },
           ),
 
@@ -120,7 +97,7 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
             data: (reports) {
               // 데이터가 로드되고 컨트롤러가 준비되면 마커 추가
               if (_mapController != null) {
-                _addMarkersToMap(reports);
+                _addMarkersToMap(reports, initialLoad: false);
               }
               return const SizedBox.shrink();
             },
@@ -141,7 +118,9 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
                       ElevatedButton(
                         onPressed: () {
                           // 다시 시도
-                          ref.refresh(reportDataProvider);
+                          ref
+                              .read(reportDataNotifierProvider.notifier)
+                              .refreshReports();
                         },
                         child: const Text('다시 시도'),
                       ),
@@ -170,13 +149,30 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
     );
   }
 
+  // 선택된 리포트로 카메라 이동 함수
+  void _moveCameraToReport(String reportId, List<ReportData> reports) {
+    if (_mapController == null) return;
+
+    final report = reports.firstWhere(
+      (report) => report.id == reportId,
+      orElse: () => reports.first,
+    );
+
+    // 카메라 이동
+    _mapController?.updateCamera(
+      NCameraUpdate.withParams(
+        target: NLatLng(report.latitude - 0.0003, report.longitude),
+        zoom: 18,
+      ),
+    );
+  }
+
   // 마커를 지도에 추가하는 함수
-  void _addMarkersToMap(List<ReportData> reports) {
-    // 기존 마커 모두 제거
-    for (final marker in _markers.values) {
-      _mapController?.addOverlay(marker);
-    }
+  void _addMarkersToMap(List<ReportData> reports, {bool initialLoad = false}) {
+    // 이전 마커 관련 변수 정리
     _markers.clear();
+
+    if (_mapController == null) return;
 
     // 새 마커 추가
     for (final report in reports) {
@@ -188,25 +184,20 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
 
       // 마커 클릭 이벤트 설정
       marker.setOnTapListener((overlay) {
-        // 신고 선택
-        ref.read(selectedReportIdProvider.notifier).state = report.id;
-
-        // 카메라 이동
-        _mapController?.updateCamera(
-          NCameraUpdate.withParams(
-            target: NLatLng(report.latitude, report.longitude),
-            zoom: 16,
-          ),
-        );
+        // 신고 선택 (카메라 이동은 위젯 빌드 이후에 처리)
+        ref
+            .read(selectedReportProviderProvider.notifier)
+            .selectReport(report.id);
       });
 
       // 지도에 마커 추가
-      _mapController?.addOverlay(marker);
+      _mapController!.addOverlay(marker);
       _markers[report.id] = marker;
     }
 
-    // 마커가 있으면 모든 마커가 보이도록 카메라 위치 조정
-    if (reports.isNotEmpty) {
+    // 카메라 이동 (선택된 마커가 없고 초기 로드일 때만)
+    String? selectedId = ref.read(selectedReportProviderProvider);
+    if (reports.isNotEmpty && selectedId == null && initialLoad) {
       final positions =
           reports
               .map((report) => NLatLng(report.latitude, report.longitude))
@@ -229,12 +220,13 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           // 제목 및 닫기 버튼
           ListTile(
             title: Text(
-              report.title,
+              report.id,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
@@ -243,7 +235,9 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
             trailing: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
-                ref.read(selectedReportIdProvider.notifier).state = null;
+                ref
+                    .read(selectedReportProviderProvider.notifier)
+                    .clearSelection();
               },
             ),
             isThreeLine: true,
@@ -251,10 +245,6 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
 
           // 이미지
           ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
             child: CachedNetworkImage(
               imageUrl: report.imageUrl,
               placeholder:
@@ -279,7 +269,6 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
             ),
           ),
 
-          // 설명이 있는 경우 표시
           if (report.description != null && report.description!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
