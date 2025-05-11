@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -25,25 +26,31 @@ class SettingsPage extends StatelessWidget {
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
                   // 동의 정보 페이지로 이동
+                  final url =
+                      'https://sites.google.com/view/clean-road-privacy';
+                  launchUrl(
+                    Uri.parse(url),
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildSection(
-            context,
-            title: '계정',
-            children: [
-              _buildListTile(
-                context,
-                title: '로그아웃',
-                trailing: const Icon(Icons.logout, color: Colors.red),
-                onTap: () {
-                  // 로그아웃 처리
-                },
-              ),
-            ],
-          ),
+          // const SizedBox(height: 16),
+          // _buildSection(
+          //   context,
+          //   title: '계정',
+          //   children: [
+          //     _buildListTile(
+          //       context,
+          //       title: '로그아웃',
+          //       trailing: const Icon(Icons.logout, color: Colors.red),
+          //       onTap: () {
+          //         // 로그아웃 처리
+          //       },
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );
