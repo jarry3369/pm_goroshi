@@ -9,7 +9,7 @@ part 'report_provider.g.dart';
 // 신고 데이터 모델
 class ReportData {
   final String id;
-  final String imageUrl;
+  final List<String> imageUrls;
   final double latitude;
   final double longitude;
   final DateTime reportedAt;
@@ -18,7 +18,7 @@ class ReportData {
 
   ReportData({
     required this.id,
-    required this.imageUrl,
+    required this.imageUrls,
     required this.latitude,
     required this.longitude,
     required this.reportedAt,
@@ -29,7 +29,10 @@ class ReportData {
   factory ReportData.fromJson(Map<String, dynamic> json) {
     return ReportData(
       id: json['id'] as String,
-      imageUrl: json['image_url'] as String,
+      imageUrls:
+          (json['image_urls'] as List<dynamic>)
+              .map((url) => url as String)
+              .toList(),
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       reportedAt: DateTime.parse(json['reported_at'] as String),
@@ -66,13 +69,21 @@ class ReportDataNotifier extends _$ReportDataNotifier {
                 data['timestamp'] as String,
               );
 
+              // 이미지 URL 리스트 추출
+              List<String> imageUrls = [];
+              if (content['image_urls'] is List) {
+                imageUrls =
+                    (content['image_urls'] as List)
+                        .map((url) => url.toString())
+                        .toList();
+              } else if (content['image_urls'] is String &&
+                  content['image_urls'].isNotEmpty) {
+                imageUrls = [content['image_urls'] as String];
+              }
+
               return ReportData(
                 id: data['report_id'] as String? ?? data['id'] as String,
-                imageUrl:
-                    (content['image_urls'] as List<dynamic>?)?.isNotEmpty ==
-                            true
-                        ? content['image_urls'][0] as String
-                        : '',
+                imageUrls: imageUrls.isNotEmpty ? imageUrls : [''],
                 latitude: (content['latitude'] as num?)?.toDouble() ?? 37.5666,
                 longitude:
                     (content['longitude'] as num?)?.toDouble() ?? 126.9784,

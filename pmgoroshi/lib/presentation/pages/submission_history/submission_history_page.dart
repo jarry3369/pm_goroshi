@@ -20,9 +20,6 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
   // 리포트 마커들
   final Map<String, NMarker> _markers = {};
 
-  // 선택된 마커의 정보 창
-  NInfoWindow? _infoWindow;
-
   // 이전 선택된 ID 저장
   String? _previousSelectedId;
 
@@ -243,30 +240,63 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
             isThreeLine: true,
           ),
 
-          // 이미지
-          ClipRRect(
-            child: CachedNetworkImage(
-              imageUrl: report.imageUrl,
-              placeholder:
-                  (context, url) => const SizedBox(
-                    height: 200,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-              errorWidget:
-                  (context, url, error) => const SizedBox(
-                    height: 200,
-                    child: Center(
-                      child: Icon(
-                        Icons.error_outline,
-                        size: 50,
-                        color: Colors.red,
-                      ),
+          // 이미지 캐러셀
+          SizedBox(
+            height: 200,
+            child:
+                report.imageUrls.isEmpty
+                    ? const Center(child: Text('이미지가 없습니다'))
+                    : PageView.builder(
+                      itemCount: report.imageUrls.length,
+                      itemBuilder: (context, index) {
+                        return Stack(
+                          children: [
+                            // 이미지
+                            CachedNetworkImage(
+                              imageUrl: report.imageUrls[index],
+                              placeholder:
+                                  (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                              errorWidget:
+                                  (context, url, error) => const Center(
+                                    child: Icon(
+                                      Icons.error_outline,
+                                      size: 50,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+
+                            // 이미지 개수 표시기
+                            if (report.imageUrls.length > 1)
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${index + 1}/${report.imageUrls.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
-                  ),
-              fit: BoxFit.cover,
-              height: 200,
-              width: double.infinity,
-            ),
           ),
 
           if (report.description != null && report.description!.isNotEmpty)
