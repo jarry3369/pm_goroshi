@@ -19,7 +19,7 @@ class MainScaffold extends StatelessWidget {
             icon: Icon(Icons.qr_code_scanner),
             label: 'QR 스캔',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: '제출 내역'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: '신고 지도'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
         ],
       ),

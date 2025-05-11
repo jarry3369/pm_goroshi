@@ -23,6 +23,9 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
   // 이전 선택된 ID 저장
   String? _previousSelectedId;
 
+  // 이미지 BoxFit 상태 관리
+  bool _useContainFit = false;
+
   @override
   void initState() {
     super.initState();
@@ -126,6 +129,52 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
                 ),
           ),
 
+          // 범례 표시
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('미처리된 신고'),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('처리된 신고'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           // 선택된 신고 상세 정보 표시
           if (selectedReportId != null &&
               reportsAsync.hasValue &&
@@ -134,11 +183,44 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
               left: 20,
               right: 20,
               bottom: 20,
-              child: _buildReportDetailCard(
-                reportsAsync.value!.firstWhere(
-                  (report) => report.id == selectedReportId,
-                  orElse: () => reportsAsync.value!.first,
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    top: -40,
+                    right: 20,
+                    child: GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(selectedReportProviderProvider.notifier)
+                            .clearSelection();
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.close, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+
+                  _buildReportDetailCard(
+                    reportsAsync.value!.firstWhere(
+                      (report) => report.id == selectedReportId,
+                      orElse: () => reportsAsync.value!.first,
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -158,8 +240,8 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
     // 카메라 이동
     _mapController?.updateCamera(
       NCameraUpdate.withParams(
-        target: NLatLng(report.latitude - 0.0003, report.longitude),
-        zoom: 18,
+        target: NLatLng(report.latitude - 0.001, report.longitude),
+        zoom: 16,
       ),
     );
   }
@@ -220,24 +302,69 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 제목 및 닫기 버튼
-          ListTile(
-            title: Text(
-              report.id,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+          // 제목 및 상태
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
             ),
-            subtitle: Text(
-              '${dateFormat.format(report.reportedAt)}\n${report.address}',
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        report.id,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        dateFormat.format(report.reportedAt),
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: report.processed ? Colors.green : Colors.red,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        report.processed ? Icons.check_circle : Icons.warning,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        report.processed ? '처리완료' : '미처리',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                ref
-                    .read(selectedReportProviderProvider.notifier)
-                    .clearSelection();
-              },
-            ),
-            isThreeLine: true,
           ),
 
           // 이미지 캐러셀
@@ -252,22 +379,32 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
                         return Stack(
                           children: [
                             // 이미지
-                            CachedNetworkImage(
-                              imageUrl: report.imageUrls[index],
-                              placeholder:
-                                  (context, url) => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                              errorWidget:
-                                  (context, url, error) => const Center(
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      size: 50,
-                                      color: Colors.red,
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _useContainFit = !_useContainFit;
+                                });
+                              },
+                              child: CachedNetworkImage(
+                                imageUrl: report.imageUrls[index],
+                                placeholder:
+                                    (context, url) => const Center(
+                                      child: CircularProgressIndicator(),
                                     ),
-                                  ),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
+                                errorWidget:
+                                    (context, url, error) => const Center(
+                                      child: Icon(
+                                        Icons.error_outline,
+                                        size: 50,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                fit:
+                                    _useContainFit
+                                        ? BoxFit.contain
+                                        : BoxFit.cover,
+                                width: double.infinity,
+                              ),
                             ),
 
                             // 이미지 개수 표시기
@@ -293,17 +430,85 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
                                   ),
                                 ),
                               ),
+
+                            // BoxFit 모드 표시
+                            Positioned(
+                              bottom: 10,
+                              right: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _useContainFit ? '원본 비율' : '화면 맞춤',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         );
                       },
                     ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 신고 내용
+                if (report.description != null &&
+                    report.description!.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '신고 내용',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(report.description!),
+                    ],
+                  ),
 
-          if (report.description != null && report.description!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(report.description!),
+                // 주소
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              report.address,
+                              style: TextStyle(color: Colors.grey.shade700),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );

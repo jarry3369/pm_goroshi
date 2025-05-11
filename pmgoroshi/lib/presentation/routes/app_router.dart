@@ -32,7 +32,7 @@ GoRouter appRouter(AppRouterRef ref) {
               ),
             ],
           ),
-          // 두 번째 탭: 제출 내역
+          // 두 번째 탭: 신고 지도
           StatefulShellBranch(
             routes: [
               GoRoute(

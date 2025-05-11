@@ -15,6 +15,7 @@ class ReportData {
   final DateTime reportedAt;
   final String address;
   final String? description;
+  final bool processed;
 
   ReportData({
     required this.id,
@@ -24,6 +25,7 @@ class ReportData {
     required this.reportedAt,
     required this.address,
     this.description,
+    this.processed = false,
   });
 
   factory ReportData.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class ReportData {
       reportedAt: DateTime.parse(json['reported_at'] as String),
       address: json['address'] as String? ?? '주소 정보 없음',
       description: json['description'] as String?,
+      processed: json['processed'] as bool? ?? false,
     );
   }
 }
@@ -93,6 +96,7 @@ class ReportDataNotifier extends _$ReportDataNotifier {
                         : timestamp,
                 address: content['location'] as String? ?? '위치 정보 없음',
                 description: content['description'] as String?,
+                processed: data['processed'] as bool? ?? false,
               );
             } catch (e) {
               // 데이터 변환 오류 발생 시 null 반환 (리스트에서 제외)
