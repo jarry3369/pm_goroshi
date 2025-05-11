@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -18,8 +19,27 @@ class SettingsPage extends StatelessWidget {
               _buildListTile(
                 context,
                 title: '버전',
-                trailing: const Text('0.1.1'),
+                trailing: FutureBuilder<PackageInfo>(
+                  future: PackageInfo.fromPlatform(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      );
+                    }
+
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const Text('버전 확인 불가');
+                    }
+
+                    final info = snapshot.data!;
+                    return Text('${info.version}+${info.buildNumber}');
+                  },
+                ),
               ),
+
               _buildListTile(
                 context,
                 title: '데이터 수집 동의',

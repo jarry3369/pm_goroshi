@@ -1,7 +1,7 @@
 name: pmgoroshi
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.1.1+2
+version: 0.1.2+3
 
 environment:
   sdk: ^3.7.0
@@ -52,6 +52,7 @@ dependencies:
   firebase_core: ^3.12.1
   firebase_messaging: ^15.2.4
   flutter_local_notifications: ^19.0.0
+  package_info_plus: ^8.3.0
 
 dev_dependencies:
   flutter_test:
