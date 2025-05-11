@@ -4,6 +4,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:pmgoroshi/presentation/controllers/report_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SubmissionHistoryPage extends ConsumerStatefulWidget {
   const SubmissionHistoryPage({Key? key}) : super(key: key);
@@ -26,6 +27,9 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
   // 이미지 BoxFit 상태 관리
   bool _useContainFit = false;
 
+  // 위치 이동 취소를 위한 변수
+  bool _isMovingToCurrentLocation = false;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +37,84 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(reportDataNotifierProvider.notifier).refreshReports();
     });
+  }
+
+  // 현재 위치로 이동
+  Future<void> _moveToCurrentLocation() async {
+    // 이미 실행 중이면 중복 실행 방지
+    if (_isMovingToCurrentLocation) return;
+
+    setState(() {
+      _isMovingToCurrentLocation = true;
+    });
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 2),
+      );
+
+      // 중간에 취소되었으면 종료
+      if (!_isMovingToCurrentLocation) return;
+
+      // 지도 이동
+      _mapController?.updateCamera(
+        NCameraUpdate.withParams(
+          target: NLatLng(position.latitude, position.longitude),
+          zoom: 16,
+        ),
+      );
+    } catch (e) {
+      // 중간에 취소되었으면 종료
+      if (!_isMovingToCurrentLocation) return;
+
+      // 타임아웃 또는 오류 발생 시 마지막 알려진 위치로 대체
+      try {
+        Position lastPosition =
+            await Geolocator.getLastKnownPosition() ??
+            await Geolocator.getPositionStream(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.low,
+              ),
+            ).first.timeout(const Duration(seconds: 1));
+
+        // 중간에 취소되었으면 종료
+        if (!_isMovingToCurrentLocation) return;
+
+        _mapController?.updateCamera(
+          NCameraUpdate.withParams(
+            target: NLatLng(lastPosition.latitude, lastPosition.longitude),
+            zoom: 16,
+          ),
+        );
+      } catch (_) {
+        // 중간에 취소되었으면 메시지 표시하지 않음
+        if (!_isMovingToCurrentLocation) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('위치를 찾을 수 없습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      // 상태 초기화
+      if (mounted) {
+        setState(() {
+          _isMovingToCurrentLocation = false;
+        });
+      }
+    }
+  }
+
+  // 위치 이동 취소
+  void _cancelCurrentLocationMovement() {
+    if (_isMovingToCurrentLocation) {
+      setState(() {
+        _isMovingToCurrentLocation = false;
+      });
+    }
   }
 
   @override
@@ -75,6 +157,13 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
                 zoom: 12,
               ),
               rotationGesturesEnable: false,
+              extent: NLatLngBounds(
+                southWest: NLatLng(33.0, 124.5), // 대한민국 최남서단 (마라도 근처)
+                northEast: NLatLng(38.6, 131.0), // 대한민국 최북동단 (독도 포함)
+              ),
+              minZoom: 6, // 대한민국 전체가 보이는 최소 줌 레벨
+              maxZoom: 19, // 상세 건물이 보이는 최대 줌 레벨
+              indoorEnable: false,
             ),
             onMapReady: (controller) {
               _mapController = controller;
@@ -89,6 +178,16 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
               ref
                   .read(selectedReportProviderProvider.notifier)
                   .clearSelection();
+
+              // 위치 이동 중단
+              _cancelCurrentLocationMovement();
+            },
+            onCameraChange: (reason, animated) {
+              // 드래그로 카메라가 움직이면 위치 이동 중단
+              if (reason == NCameraUpdateReason.gesture ||
+                  reason == NCameraUpdateReason.control) {
+                _cancelCurrentLocationMovement();
+              }
             },
           ),
 
@@ -175,6 +274,22 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
             ),
           ),
 
+          // 현재 위치 버튼
+          if (selectedReportId == null)
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: FloatingActionButton(
+                heroTag: 'currentLocationButton',
+                onPressed: _moveToCurrentLocation,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.my_location,
+                  color: Colors.lightBlue.shade400,
+                ),
+              ),
+            ),
+
           // 선택된 신고 상세 정보 표시
           if (selectedReportId != null &&
               reportsAsync.hasValue &&
@@ -237,11 +352,10 @@ class _SubmissionHistoryPageState extends ConsumerState<SubmissionHistoryPage> {
       orElse: () => reports.first,
     );
 
-    // 카메라 이동
     _mapController?.updateCamera(
       NCameraUpdate.withParams(
-        target: NLatLng(report.latitude - 0.001, report.longitude),
-        zoom: 16,
+        target: NLatLng(report.latitude - 0.0001, report.longitude),
+        zoomBy: 16,
       ),
     );
   }
