@@ -16,7 +16,7 @@ dependencies:
   riverpod_annotation: ^2.3.4
 
   # QR 스캔 관련
-  mobile_scanner: ^4.0.0
+  mobile_scanner: ^7.0.0
 
   # 네트워크 통신
   dio: ^5.4.0
