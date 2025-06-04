@@ -37,7 +37,7 @@ dependencies:
   # 위치 서비스
   geolocator: ^11.0.0
   geocoding: ^2.1.1
-  flutter_naver_map: ^1.2.3
+  flutter_naver_map: 1.3.1
 
   # 라우팅
   go_router: ^13.2.0

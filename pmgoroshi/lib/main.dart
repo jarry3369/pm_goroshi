@@ -26,8 +26,8 @@ void main() async {
   );
 
   // 네이버 맵 초기화
-  await NaverMapSdk.instance.initialize(
-    clientId: 'ua6cqc07v3',
+  await FlutterNaverMap().init(
+    clientId: 'sllctg6180',
     onAuthFailed: (error) {
       print('네이버 맵 인증 실패: $error');
     },
