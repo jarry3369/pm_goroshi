@@ -8,15 +8,20 @@ import 'package:pmgoroshi/presentation/pages/main_scaffold.dart';
 import 'package:pmgoroshi/presentation/pages/submission_history/submission_history_page.dart';
 import 'package:pmgoroshi/presentation/pages/settings/settings_page.dart';
 import 'package:pmgoroshi/main.dart' show routeObserver;
+import 'package:pmgoroshi/presentation/screens/splash_screen.dart';
 
 part 'app_router.g.dart';
 
 @riverpod
 GoRouter appRouter(AppRouterRef ref) {
   return GoRouter(
-    initialLocation: '/scan',
+    initialLocation: '/splash',
     observers: [routeObserver],
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       // 메인 쉘 라우트 (탭 네비게이션)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
