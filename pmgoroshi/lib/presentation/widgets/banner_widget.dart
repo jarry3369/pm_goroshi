@@ -41,7 +41,7 @@ class BannerWidget extends ConsumerWidget {
             if (banner.image_url != null) _buildImageSection(),
 
             // 콘텐츠 영역
-            _buildContentSection(context, textColor),
+            _buildContentSection(context, textColor, ref),
           ],
         ),
       ),
@@ -83,7 +83,11 @@ class BannerWidget extends ConsumerWidget {
   }
 
   // 콘텐츠 섹션
-  Widget _buildContentSection(BuildContext context, Color textColor) {
+  Widget _buildContentSection(
+    BuildContext context,
+    Color textColor,
+    WidgetRef ref,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       child: Column(
@@ -108,6 +112,18 @@ class BannerWidget extends ConsumerWidget {
               height: 1.5,
             ),
           ),
+
+          // 버튼 (조건부)
+          if ((banner.action_type == 'url' || banner.action_type == 'route') &&
+              banner.action_url != null &&
+              banner.action_url!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: ElevatedButton(
+                onPressed: () => _handleButtonTap(context, ref),
+                child: Text(banner.button_text ?? '확인하기'),
+              ),
+            ),
         ],
       ),
     );

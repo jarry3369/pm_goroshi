@@ -139,7 +139,7 @@ class BannerNotifier extends StateNotifier<AsyncValue<List<Banner>>> {
 
     switch (actionType) {
       case 'url':
-        return '사이트 방문하기';
+        return '이동하기';
       case 'route':
         return '이동하기';
       default:
