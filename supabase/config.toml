@@ -338,3 +338,25 @@ entrypoint = "./functions/discord-notification/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/discord-notification/*.html" ]
+
+[functions.sms-serve]
+enabled = true
+verify_jwt = true
+import_map = "./functions/sms-serve/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/sms-serve/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/sms-serve/*.html" ]
+
+[functions.report-submit]
+enabled = true
+verify_jwt = true
+import_map = "./functions/report-submit/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/report-submit/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/report-submit/*.html" ]
