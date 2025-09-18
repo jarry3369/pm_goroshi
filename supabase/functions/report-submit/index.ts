@@ -200,9 +200,10 @@ function buildContentsMessage(p: Payload, filesMetaDates: string[]): string {
   if (companyName) details.push(`* 업체명: ${companyName}`);
   if (p.serial_number) details.push(`* 기기 시리얼 번호: ${p.serial_number}`);
 
-  let message = `${p?.image_urls
+  let message = `이미지 링크 \n\n ${p?.image_urls
     ?.map((u) => u)
-    ?.join(`\n`)}\n\n${JSON.stringify(p, null, 2)}`;
+    ?.join(`\n`)}`;
+  message += "\n";
 
   if (details.length > 0) {
     message += `\n${details.join("\n")}\n`;
