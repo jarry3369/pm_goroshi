@@ -12,6 +12,7 @@ class MainScaffold extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => _onTap(context, index),
         items: const [
@@ -20,6 +21,7 @@ class MainScaffold extends StatelessWidget {
             label: 'QR 스캔',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: '신고 지도'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: '내 신고'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
         ],
       ),

@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pmgoroshi/data/services/supabase_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:convert';
 
 part 'report_provider.g.dart';
@@ -16,6 +18,9 @@ class ReportData {
   final String address;
   final String? description;
   final bool processed;
+  final String? status;
+  final String? reportId;
+  final String? errorMessage;
 
   ReportData({
     required this.id,
@@ -26,6 +31,9 @@ class ReportData {
     required this.address,
     this.description,
     this.processed = false,
+    this.status,
+    this.reportId,
+    this.errorMessage,
   });
 
   factory ReportData.fromJson(Map<String, dynamic> json) {
@@ -41,6 +49,9 @@ class ReportData {
       address: json['address'] as String? ?? '주소 정보 없음',
       description: json['description'] as String?,
       processed: json['processed'] as bool? ?? false,
+      status: json['status'] as String?,
+      reportId: json['report_id'] as String?,
+      errorMessage: json['error_message'] as String?,
     );
   }
 }
@@ -134,5 +145,98 @@ class SelectedReportProvider extends _$SelectedReportProvider {
 
   void clearSelection() {
     state = null;
+  }
+}
+
+// 개인 신고 데이터 프로바이더
+@riverpod
+class MyReportDataNotifier extends _$MyReportDataNotifier {
+  @override
+  FutureOr<List<ReportData>> build() async {
+    return _fetchMyReports();
+  }
+
+  Future<List<ReportData>> _fetchMyReports() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final deviceId = await _getDeviceId();
+      
+      final response = await supabase
+          .from('reports')
+          .select()
+          .eq('device_id', deviceId)
+          .order('timestamp', ascending: false);
+
+      return response
+          .map<ReportData?>((data) {
+            try {
+              final Map<String, dynamic> content =
+                  data['content'] is String
+                      ? jsonDecode(data['content'] as String)
+                      : data['content'] as Map<String, dynamic>;
+
+              final DateTime timestamp = DateTime.parse(
+                data['timestamp'] as String,
+              );
+
+              // 이미지 URL 리스트 추출
+              List<String> imageUrls = [];
+              if (content['image_urls'] is List) {
+                imageUrls =
+                    (content['image_urls'] as List)
+                        .map((url) => url.toString())
+                        .toList();
+              } else if (content['image_urls'] is String &&
+                  content['image_urls'].isNotEmpty) {
+                imageUrls = [content['image_urls'] as String];
+              }
+
+              return ReportData(
+                id: data['id'] as String,
+                imageUrls: imageUrls.isNotEmpty ? imageUrls : [''],
+                latitude: (content['latitude'] as num?)?.toDouble() ?? 37.5666,
+                longitude:
+                    (content['longitude'] as num?)?.toDouble() ?? 126.9784,
+                reportedAt:
+                    content['submission_time'] != null
+                        ? DateTime.parse(content['submission_time'] as String)
+                        : timestamp,
+                address: content['location'] as String? ?? '위치 정보 없음',
+                description: content['description'] as String?,
+                processed: data['processed'] as bool? ?? false,
+                status: data['status'] as String?,
+                reportId: data['report_id'] as String?,
+                errorMessage: data['error_message'] as String?,
+              );
+            } catch (e) {
+              // 데이터 변환 오류 발생 시 null 반환 (리스트에서 제외)
+              print('개인 신고 데이터 파싱 오류: $e, 데이터: \\${data['id']}');
+              return null;
+            }
+          })
+          .whereType<ReportData>()
+          .toList();
+    } catch (e) {
+      // 오류 발생 시 빈 배열 반환
+      print('개인 신고 내역 로드 중 오류 발생: $e');
+      return [];
+    }
+  }
+
+  // 디바이스 ID 가져오기
+  Future<String> _getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final deviceId = prefs.getString('device_id');
+    if (deviceId != null) return deviceId;
+
+    final newDeviceId = const Uuid().v4();
+    await prefs.setString('device_id', newDeviceId);
+    return newDeviceId;
+  }
+
+  // 데이터 새로고침
+  Future<void> refreshMyReports() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _fetchMyReports());
   }
 }

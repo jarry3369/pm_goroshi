@@ -6,6 +6,8 @@ import 'package:pmgoroshi/presentation/pages/data_form/data_form_page.dart';
 import 'package:pmgoroshi/presentation/pages/completion/completion_page.dart';
 import 'package:pmgoroshi/presentation/pages/main_scaffold.dart';
 import 'package:pmgoroshi/presentation/pages/submission_history/submission_history_page.dart';
+import 'package:pmgoroshi/presentation/pages/my_reports/my_reports_page.dart';
+import 'package:pmgoroshi/presentation/pages/my_reports/my_report_detail_page.dart';
 import 'package:pmgoroshi/presentation/pages/settings/settings_page.dart';
 import 'package:pmgoroshi/main.dart' show routeObserver;
 import 'package:pmgoroshi/presentation/screens/splash_screen.dart';
@@ -46,7 +48,16 @@ GoRouter appRouter(AppRouterRef ref) {
               ),
             ],
           ),
-          // 세 번째 탭: 설정
+          // 세 번째 탭: 내 신고
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/my-reports',
+                builder: (context, state) => const MyReportsPage(),
+              ),
+            ],
+          ),
+          // 네 번째 탭: 설정
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -78,6 +89,13 @@ GoRouter appRouter(AppRouterRef ref) {
                     ? DateTime.parse(data!['submissionTime'] as String)
                     : DateTime.now(),
           );
+        },
+      ),
+      GoRoute(
+        path: '/my-reports/:id',
+        builder: (context, state) {
+          final reportId = state.pathParameters['id']!;
+          return MyReportDetailPage(reportId: reportId);
         },
       ),
     ],

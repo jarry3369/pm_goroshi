@@ -40,5 +40,22 @@ final selectedReportProviderProvider =
 );
 
 typedef _$SelectedReportProvider = AutoDisposeNotifier<String?>;
+String _$myReportDataNotifierHash() =>
+    r'4b743df19a6dab1af3f76174e9a00f1053741d76';
+
+/// See also [MyReportDataNotifier].
+@ProviderFor(MyReportDataNotifier)
+final myReportDataNotifierProvider = AutoDisposeAsyncNotifierProvider<
+    MyReportDataNotifier, List<ReportData>>.internal(
+  MyReportDataNotifier.new,
+  name: r'myReportDataNotifierProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$myReportDataNotifierHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$MyReportDataNotifier = AutoDisposeAsyncNotifier<List<ReportData>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

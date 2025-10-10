@@ -360,4 +360,20 @@ class SupabaseService {
     await prefs.setString('device_id', newDeviceId);
     return newDeviceId;
   }
+
+  // 개인 신고 내역 조회
+  Future<List<Map<String, dynamic>>> getMyReports(String deviceId) async {
+    try {
+      final response = await _client
+          .from(_tableName)
+          .select()
+          .eq('device_id', deviceId)
+          .order('timestamp', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('개인 신고 내역 조회 오류: $e');
+      throw Exception('개인 신고 내역 조회 중 오류가 발생했습니다: $e');
+    }
+  }
 }
