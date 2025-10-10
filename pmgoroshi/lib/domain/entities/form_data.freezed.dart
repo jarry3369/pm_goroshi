@@ -32,12 +32,8 @@ mixin _$SubmissionData {
   @JsonKey(toJson: _violationTypeToJson)
   ViolationType get violationType => throw _privateConstructorUsedError;
 
-  /// Serializes this SubmissionData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of SubmissionData
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $SubmissionDataCopyWith<SubmissionData> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -73,8 +69,6 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of SubmissionData
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -133,8 +127,6 @@ class _$SubmissionDataCopyWithImpl<$Res, $Val extends SubmissionData>
     ) as $Val);
   }
 
-  /// Create a copy of SubmissionData
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ViolationTypeCopyWith<$Res> get violationType {
@@ -176,8 +168,6 @@ class __$$SubmissionDataImplCopyWithImpl<$Res>
       _$SubmissionDataImpl _value, $Res Function(_$SubmissionDataImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of SubmissionData
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -315,7 +305,7 @@ class _$SubmissionDataImpl implements _SubmissionData {
                 other.violationType == violationType));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -330,9 +320,7 @@ class _$SubmissionDataImpl implements _SubmissionData {
       serialNumber,
       violationType);
 
-  /// Create a copy of SubmissionData
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$SubmissionDataImplCopyWith<_$SubmissionDataImpl> get copyWith =>
@@ -385,11 +373,8 @@ abstract class _SubmissionData implements SubmissionData {
   @override
   @JsonKey(toJson: _violationTypeToJson)
   ViolationType get violationType;
-
-  /// Create a copy of SubmissionData
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$SubmissionDataImplCopyWith<_$SubmissionDataImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

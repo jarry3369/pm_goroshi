@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pmgoroshi/firebase_options.dart';
 import 'package:pmgoroshi/presentation/routes/app_router.dart';
 import 'package:pmgoroshi/core/permissions/permission_handler.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:pmgoroshi/data/services/push_notification_service.dart';
+import 'package:logger/logger.dart';
 
 // RouteObserver 전역 변수 정의
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -29,7 +29,8 @@ void main() async {
   await FlutterNaverMap().init(
     clientId: 'sllctg6180',
     onAuthFailed: (error) {
-      print('네이버 맵 인증 실패: $error');
+      final logger = Logger();
+      logger.w('네이버 맵 인증 실패: $error');
     },
   );
 
@@ -68,7 +69,7 @@ class QRDataCollectorApp extends ConsumerWidget {
             color: Color(0xFF3B82F6),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

@@ -7,7 +7,7 @@ part of 'report_provider.dart';
 // **************************************************************************
 
 String _$reportDataNotifierHash() =>
-    r'2afb9734ee3bcfe3e716b466f04775e43fa7032c';
+    r'1ee3253ab97d92f77105873b095ec21149960fb3';
 
 /// See also [ReportDataNotifier].
 @ProviderFor(ReportDataNotifier)
@@ -41,4 +41,4 @@ final selectedReportProviderProvider =
 
 typedef _$SelectedReportProvider = AutoDisposeNotifier<String?>;
 // ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

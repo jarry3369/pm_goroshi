@@ -28,9 +28,7 @@ mixin _$DataFormState {
   Position? get position => throw _privateConstructorUsedError;
   ViolationType? get violationType => throw _privateConstructorUsedError;
 
-  /// Create a copy of DataFormState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $DataFormStateCopyWith<DataFormState> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -67,8 +65,6 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of DataFormState
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -132,8 +128,6 @@ class _$DataFormStateCopyWithImpl<$Res, $Val extends DataFormState>
     ) as $Val);
   }
 
-  /// Create a copy of DataFormState
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ViolationTypeCopyWith<$Res>? get violationType {
@@ -180,8 +174,6 @@ class __$$DataFormStateImplCopyWithImpl<$Res>
       _$DataFormStateImpl _value, $Res Function(_$DataFormStateImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of DataFormState
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -345,9 +337,7 @@ class _$DataFormStateImpl implements _DataFormState {
       position,
       violationType);
 
-  /// Create a copy of DataFormState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$DataFormStateImplCopyWith<_$DataFormStateImpl> get copyWith =>
@@ -390,11 +380,8 @@ abstract class _DataFormState implements DataFormState {
   Position? get position;
   @override
   ViolationType? get violationType;
-
-  /// Create a copy of DataFormState
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$DataFormStateImplCopyWith<_$DataFormStateImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

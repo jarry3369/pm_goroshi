@@ -47,12 +47,8 @@ mixin _$Banner {
   @JsonKey(includeFromJson: false, includeToJson: false)
   String? get sub_image_url => throw _privateConstructorUsedError;
 
-  /// Serializes this Banner to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of Banner
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $BannerCopyWith<Banner> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -97,8 +93,6 @@ class _$BannerCopyWithImpl<$Res, $Val extends Banner>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of Banner
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -239,8 +233,6 @@ class __$$BannerImplCopyWithImpl<$Res>
       _$BannerImpl _value, $Res Function(_$BannerImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of Banner
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -486,7 +478,7 @@ class _$BannerImpl with DiagnosticableTreeMixin implements _Banner {
                 other.sub_image_url == sub_image_url));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -509,9 +501,7 @@ class _$BannerImpl with DiagnosticableTreeMixin implements _Banner {
       type_label,
       sub_image_url);
 
-  /// Create a copy of Banner
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$BannerImplCopyWith<_$BannerImpl> get copyWith =>
@@ -575,8 +565,8 @@ abstract class _Banner implements Banner {
   @override
   String? get action_type;
   @override
-  DateTime get timestamp; // 클라이언트 측 필드 (데이터베이스에 없는 필드)
-  @override
+  DateTime get timestamp;
+  @override // 클라이언트 측 필드 (데이터베이스에 없는 필드)
   @JsonKey(includeFromJson: false, includeToJson: false)
   bool get is_read;
   @override
@@ -597,11 +587,8 @@ abstract class _Banner implements Banner {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   String? get sub_image_url;
-
-  /// Create a copy of Banner
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$BannerImplCopyWith<_$BannerImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

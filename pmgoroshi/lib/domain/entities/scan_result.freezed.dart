@@ -24,12 +24,8 @@ mixin _$ScanResult {
   DateTime get scanTime => throw _privateConstructorUsedError;
   String? get location => throw _privateConstructorUsedError;
 
-  /// Serializes this ScanResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of ScanResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $ScanResultCopyWith<ScanResult> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -53,8 +49,6 @@ class _$ScanResultCopyWithImpl<$Res, $Val extends ScanResult>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ScanResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -98,8 +92,6 @@ class __$$ScanResultImplCopyWithImpl<$Res>
       _$ScanResultImpl _value, $Res Function(_$ScanResultImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of ScanResult
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -157,13 +149,11 @@ class _$ScanResultImpl implements _ScanResult {
                 other.location == location));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, qrData, scanTime, location);
 
-  /// Create a copy of ScanResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$ScanResultImplCopyWith<_$ScanResultImpl> get copyWith =>
@@ -192,11 +182,8 @@ abstract class _ScanResult implements ScanResult {
   DateTime get scanTime;
   @override
   String? get location;
-
-  /// Create a copy of ScanResult
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$ScanResultImplCopyWith<_$ScanResultImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
