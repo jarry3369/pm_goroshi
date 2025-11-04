@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 class StatusBadge extends StatelessWidget {
   final String? status;
   final bool processed;
+  final String? reportId;
 
   const StatusBadge({
     super.key,
     this.status,
     this.processed = false,
+    this.reportId,
   });
 
   @override
   Widget build(BuildContext context) {
-    final statusInfo = _getStatusInfo(status, processed);
+    final statusInfo = _getStatusInfo(status, processed, reportId);
     
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -45,53 +47,64 @@ class StatusBadge extends StatelessWidget {
     );
   }
 
-  StatusInfo _getStatusInfo(String? status, bool processed) {
-    switch (status) {
-      case 'pending':
+  StatusInfo _getStatusInfo(String? status, bool processed, String? reportId) {
+    // pending, waiting_code, ready → "접수됨"
+    if (status == 'pending' || status == 'waiting_code' || status == 'ready') {
+      return const StatusInfo(
+        text: '접수됨',
+        color: Colors.blue,
+        icon: Icons.inbox,
+      );
+    }
+
+    // failed → "제출 실패" (기존 유지)
+    if (status == 'failed') {
+      return const StatusInfo(
+        text: '제출 실패',
+        color: Colors.red,
+        icon: Icons.error,
+      );
+    }
+
+    // submitted → report_id 상태에 따라 세분화
+    if (status == 'submitted') {
+      if (reportId == null) {
+        // report_id가 없으면 "제출완료"
         return const StatusInfo(
-          text: '대기 중',
-          color: Colors.grey,
-          icon: Icons.schedule,
-        );
-      case 'waiting_code':
-        return const StatusInfo(
-          text: 'SMS 대기',
-          color: Colors.orange,
-          icon: Icons.sms,
-        );
-      case 'ready':
-        return const StatusInfo(
-          text: '제출 준비',
-          color: Colors.blue,
-          icon: Icons.send,
-        );
-      case 'submitted':
-        return const StatusInfo(
-          text: '제출 완료',
+          text: '제출완료',
           color: Colors.green,
           icon: Icons.check_circle,
         );
-      case 'failed':
+      } else if (processed) {
+        // report_id가 있고 processed가 true면 "처리완료"
         return const StatusInfo(
-          text: '제출 실패',
-          color: Colors.red,
-          icon: Icons.error,
+          text: '처리완료',
+          color: Colors.green,
+          icon: Icons.check_circle,
         );
-      default:
-        // processed 필드를 기반으로 기본 상태 결정
-        if (processed) {
-          return const StatusInfo(
-            text: '처리완료',
-            color: Colors.green,
-            icon: Icons.check_circle,
-          );
-        } else {
-          return const StatusInfo(
-            text: '미처리',
-            color: Colors.red,
-            icon: Icons.warning,
-          );
-        }
+      } else {
+        // report_id가 있고 processed가 false면 "진행중"
+        return const StatusInfo(
+          text: '진행중',
+          color: Colors.orange,
+          icon: Icons.sync,
+        );
+      }
+    }
+
+    // default: processed 필드를 기반으로 기본 상태 결정
+    if (processed) {
+      return const StatusInfo(
+        text: '처리완료',
+        color: Colors.green,
+        icon: Icons.check_circle,
+      );
+    } else {
+      return const StatusInfo(
+        text: '미처리',
+        color: Colors.red,
+        icon: Icons.warning,
+      );
     }
   }
 }

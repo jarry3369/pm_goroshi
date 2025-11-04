@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pmgoroshi/presentation/controllers/report_provider.dart';
 import 'package:pmgoroshi/presentation/widgets/status_badge.dart';
-import 'package:pmgoroshi/core/utils/status_helper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -67,8 +66,8 @@ class MyReportDetailPage extends ConsumerWidget {
 
   Widget _buildReportDetail(BuildContext context, ReportData report) {
     final dateFormat = DateFormat('yyyy년 MM월 dd일 HH:mm');
-    final statusStep = StatusHelper.getStatusStep(report.status);
-    final totalSteps = StatusHelper.getTotalSteps();
+    final statusStep = _getCurrentStep(report);
+    final totalSteps = 4;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -85,6 +84,7 @@ class MyReportDetailPage extends ConsumerWidget {
                   StatusBadge(
                     status: report.status,
                     processed: report.processed,
+                    reportId: report.reportId,
                   ),
                   Text(
                     dateFormat.format(report.reportedAt),
@@ -365,12 +365,44 @@ class MyReportDetailPage extends ConsumerWidget {
     );
   }
 
+  int _getCurrentStep(ReportData report) {
+    final status = report.status;
+    final reportId = report.reportId;
+    final processed = report.processed;
+
+    // 1. 접수됨 (pending, waiting_code, ready)
+    if (status == 'pending' || status == 'waiting_code' || status == 'ready') {
+      return 1;
+    }
+
+    // 2. submitted 상태에서 세분화
+    if (status == 'submitted') {
+      if (reportId == null) {
+        // report_id가 없으면 제출완료 단계
+        return 2;
+      } else if (processed) {
+        // report_id가 있고 processed가 true면 처리완료
+        return 4;
+      } else {
+        // report_id가 있고 processed가 false면 진행중
+        return 3;
+      }
+    }
+
+    // failed 상태는 마지막 단계로 간주
+    if (status == 'failed') {
+      return 2;
+    }
+
+    return 1;
+  }
+
   Widget _buildTimeline(int currentStep, int totalSteps, ReportData report) {
     final steps = [
-      {'status': 'pending', 'title': '신고 접수', 'description': '신고가 정상적으로 접수되었습니다'},
-      {'status': 'waiting_code', 'title': 'SMS 인증', 'description': 'SMS 인증을 통해 제출 절차를 진행합니다'},
-      {'status': 'ready', 'title': '제출 준비', 'description': '안전신문고 제출을 위한 모든 준비가 완료되었습니다'},
-      {'status': 'submitted', 'title': '제출 완료', 'description': '안전신문고에 성공적으로 제출되었습니다'},
+      {'status': 'received', 'title': '접수됨', 'description': '신고가 정상적으로 접수되었습니다'},
+      {'status': 'submitted', 'title': '제출완료', 'description': '안전신문고에 성공적으로 제출되었습니다'},
+      {'status': 'in_progress', 'title': '진행중', 'description': '안전신문고에서 처리 중입니다'},
+      {'status': 'completed', 'title': '처리완료', 'description': '처리가 완료되었습니다'},
     ];
 
     return Column(
@@ -445,7 +477,7 @@ class MyReportDetailPage extends ConsumerWidget {
                       ),
                     ),
                     // 현재 상태에 따른 추가 정보
-                    if (isCurrent && report.status == 'submitted' && report.reportId != null) ...[
+                    if (isCurrent && stepNumber >= 3 && report.reportId != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         '접수번호: ${report.reportId}',
@@ -456,7 +488,7 @@ class MyReportDetailPage extends ConsumerWidget {
                         ),
                       ),
                     ],
-                    if (isCurrent && report.status == 'failed' && report.errorMessage != null) ...[
+                    if (report.status == 'failed' && report.errorMessage != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         '오류: ${report.errorMessage}',

@@ -165,6 +165,7 @@ class _MyReportsPageState extends ConsumerState<MyReportsPage> {
                   StatusBadge(
                     status: report.status,
                     processed: report.processed,
+                    reportId: report.reportId,
                   ),
                   Text(
                     dateFormat.format(report.reportedAt),
