@@ -9,10 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 class MyReportDetailPage extends ConsumerWidget {
   final String reportId;
 
-  const MyReportDetailPage({
-    super.key,
-    required this.reportId,
-  });
+  const MyReportDetailPage({super.key, required this.reportId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +22,9 @@ class MyReportDetailPage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.read(myReportDataNotifierProvider.notifier).refreshMyReports();
+              ref
+                  .read(myReportDataNotifierProvider.notifier)
+                  .refreshMyReports();
             },
           ),
         ],
@@ -39,27 +38,26 @@ class MyReportDetailPage extends ConsumerWidget {
           return _buildReportDetail(context, report);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.red,
+        error:
+            (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('데이터 로드 중 오류 발생: $error'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref
+                          .read(myReportDataNotifierProvider.notifier)
+                          .refreshMyReports();
+                    },
+                    child: const Text('다시 시도'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text('데이터 로드 중 오류 발생: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(myReportDataNotifierProvider.notifier).refreshMyReports();
-                },
-                child: const Text('다시 시도'),
-              ),
-            ],
-          ),
-        ),
+            ),
       ),
     );
   }
@@ -88,10 +86,7 @@ class MyReportDetailPage extends ConsumerWidget {
                   ),
                   Text(
                     dateFormat.format(report.reportedAt),
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                 ],
               ),
@@ -108,10 +103,7 @@ class MyReportDetailPage extends ConsumerWidget {
                 children: [
                   const Text(
                     '처리 상태',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   _buildTimeline(statusStep, totalSteps, report),
@@ -130,18 +122,12 @@ class MyReportDetailPage extends ConsumerWidget {
                 children: [
                   const Text(
                     '신고 위치',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        color: Colors.grey.shade600,
-                      ),
+                      Icon(Icons.location_on, color: Colors.grey.shade600),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -257,19 +243,19 @@ class MyReportDetailPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _openSafetyReport(context, report.reportId!),
-                          icon: const Icon(Icons.open_in_new),
-                          label: const Text('안전신문고에서 확인하기'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.shade600,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
+                    // const SizedBox(height: 12),
+                    //   SizedBox(
+                    //     width: double.infinity,
+                    //     child: ElevatedButton.icon(
+                    //       onPressed: () => _openSafetyReport(context, report.reportId!),
+                    //       icon: const Icon(Icons.open_in_new),
+                    //       label: const Text('안전신문고에서 확인하기'),
+                    //       style: ElevatedButton.styleFrom(
+                    //         backgroundColor: Colors.green.shade600,
+                    //         foregroundColor: Colors.white,
+                    //       ),
+                    //     ),
+                    //   ),
                   ],
                 ),
               ),
@@ -357,112 +343,137 @@ class MyReportDetailPage extends ConsumerWidget {
 
   Widget _buildTimeline(int currentStep, int totalSteps, ReportData report) {
     final steps = [
-      {'status': 'received', 'title': '접수됨', 'description': '신고가 정상적으로 접수되었습니다'},
-      {'status': 'submitted', 'title': '제출완료', 'description': '안전신문고에 성공적으로 제출되었습니다'},
-      {'status': 'in_progress', 'title': '진행중', 'description': '안전신문고에서 처리 중입니다'},
+      {
+        'status': 'received',
+        'title': '접수됨',
+        'description': '신고가 정상적으로 접수되었습니다',
+      },
+      {
+        'status': 'submitted',
+        'title': '제출완료',
+        'description': '안전신문고에 성공적으로 제출되었습니다',
+      },
+      {
+        'status': 'in_progress',
+        'title': '진행중',
+        'description': '안전신문고에서 처리 중입니다',
+      },
       {'status': 'completed', 'title': '처리완료', 'description': '처리가 완료되었습니다'},
     ];
 
     return Column(
-      children: steps.asMap().entries.map((entry) {
-        final index = entry.key;
-        final step = entry.value;
-        final stepNumber = index + 1;
-        final isCompleted = stepNumber <= currentStep;
-        final isCurrent = stepNumber == currentStep;
-        final isLast = index == steps.length - 1;
+      children:
+          steps.asMap().entries.map((entry) {
+            final index = entry.key;
+            final step = entry.value;
+            final stepNumber = index + 1;
+            final isCompleted = stepNumber <= currentStep;
+            final isCurrent = stepNumber == currentStep;
+            final isLast = index == steps.length - 1;
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 단계 번호 및 연결선
-            Column(
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isCompleted ? Colors.green : Colors.grey.shade300,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: isCompleted
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 20,
-                          )
-                        : Text(
-                            stepNumber.toString(),
-                            style: TextStyle(
-                              color: isCurrent ? Colors.white : Colors.grey.shade600,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-                if (!isLast)
-                  Container(
-                    width: 2,
-                    height: 40,
-                    color: isCompleted ? Colors.green : Colors.grey.shade300,
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-
-            // 단계 정보
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // 단계 번호 및 연결선
+                Column(
                   children: [
-                    Text(
-                      step['title']!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: isCompleted ? Colors.green.shade700 : Colors.grey.shade700,
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color:
+                            isCompleted ? Colors.green : Colors.grey.shade300,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child:
+                            isCompleted
+                                ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 20,
+                                )
+                                : Text(
+                                  stepNumber.toString(),
+                                  style: TextStyle(
+                                    color:
+                                        isCurrent
+                                            ? Colors.white
+                                            : Colors.grey.shade600,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      step['description']!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
+                    if (!isLast)
+                      Container(
+                        width: 2,
+                        height: 40,
+                        color:
+                            isCompleted ? Colors.green : Colors.grey.shade300,
                       ),
-                    ),
-                    // 현재 상태에 따른 추가 정보
-                    if (isCurrent && stepNumber >= 3 && report.reportId != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '접수번호: ${report.reportId}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                    if (report.status == 'failed' && report.errorMessage != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '오류: ${report.errorMessage}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
-              ),
-            ),
-          ],
-        );
-      }).toList(),
+                const SizedBox(width: 16),
+
+                // 단계 정보
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          step['title']!,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color:
+                                isCompleted
+                                    ? Colors.green.shade700
+                                    : Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          step['description']!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        // 현재 상태에 따른 추가 정보
+                        if (isCurrent &&
+                            stepNumber >= 3 &&
+                            report.reportId != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '접수번호: ${report.reportId}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                        if (report.status == 'failed' &&
+                            report.errorMessage != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '오류: ${report.errorMessage}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
     );
   }
 
@@ -493,10 +504,7 @@ class MyReportDetailPage extends ConsumerWidget {
 class ImageGalleryWidget extends StatefulWidget {
   final List<String> imageUrls;
 
-  const ImageGalleryWidget({
-    super.key,
-    required this.imageUrls,
-  });
+  const ImageGalleryWidget({super.key, required this.imageUrls});
 
   @override
   State<ImageGalleryWidget> createState() => _ImageGalleryWidgetState();
@@ -539,10 +547,11 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => FullScreenImageViewer(
-                            imageUrls: widget.imageUrls,
-                            initialPage: index,
-                          ),
+                          builder:
+                              (context) => FullScreenImageViewer(
+                                imageUrls: widget.imageUrls,
+                                initialPage: index,
+                              ),
                         ),
                       );
                     },
@@ -551,22 +560,24 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                       child: CachedNetworkImage(
                         imageUrl: widget.imageUrls[index],
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey.shade200,
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey.shade200,
-                          child: const Center(
-                            child: Icon(
-                              Icons.error_outline,
-                              size: 50,
-                              color: Colors.red,
+                        placeholder:
+                            (context, url) => Container(
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             ),
-                          ),
-                        ),
+                        errorWidget:
+                            (context, url, error) => Container(
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.error_outline,
+                                  size: 50,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
                       ),
                     ),
                   );
@@ -629,9 +640,10 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget> {
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _currentPage == index
-                      ? Colors.green
-                      : Colors.grey.shade300,
+                  color:
+                      _currentPage == index
+                          ? Colors.green
+                          : Colors.grey.shade300,
                 ),
               ),
             ),
@@ -705,18 +717,18 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
               child: CachedNetworkImage(
                 imageUrl: widget.imageUrls[index],
                 fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                ),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(
-                    Icons.error_outline,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                ),
+                placeholder:
+                    (context, url) => const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                errorWidget:
+                    (context, url, error) => const Center(
+                      child: Icon(
+                        Icons.error_outline,
+                        size: 50,
+                        color: Colors.white,
+                      ),
+                    ),
               ),
             ),
           );
