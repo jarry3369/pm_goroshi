@@ -21,6 +21,7 @@ class ReportData {
   final String? status;
   final String? reportId;
   final String? errorMessage;
+  final String? answer;
 
   ReportData({
     required this.id,
@@ -34,6 +35,7 @@ class ReportData {
     this.status,
     this.reportId,
     this.errorMessage,
+    this.answer,
   });
 
   factory ReportData.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class ReportData {
       status: json['status'] as String?,
       reportId: json['report_id'] as String?,
       errorMessage: json['error_message'] as String?,
+      answer: json['answer'] as String?,
     );
   }
 }
@@ -207,6 +210,7 @@ class MyReportDataNotifier extends _$MyReportDataNotifier {
                 status: data['status'] as String?,
                 reportId: data['report_id'] as String?,
                 errorMessage: data['error_message'] as String?,
+                answer: data['answer'] as String?,
               );
             } catch (e) {
               // 데이터 변환 오류 발생 시 null 반환 (리스트에서 제외)

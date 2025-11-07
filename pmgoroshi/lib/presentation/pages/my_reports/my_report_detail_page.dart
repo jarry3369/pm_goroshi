@@ -243,19 +243,6 @@ class MyReportDetailPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    // const SizedBox(height: 12),
-                    //   SizedBox(
-                    //     width: double.infinity,
-                    //     child: ElevatedButton.icon(
-                    //       onPressed: () => _openSafetyReport(context, report.reportId!),
-                    //       icon: const Icon(Icons.open_in_new),
-                    //       label: const Text('안전신문고에서 확인하기'),
-                    //       style: ElevatedButton.styleFrom(
-                    //         backgroundColor: Colors.green.shade600,
-                    //         foregroundColor: Colors.white,
-                    //       ),
-                    //     ),
-                    //   ),
                   ],
                 ),
               ),
@@ -297,6 +284,33 @@ class MyReportDetailPage extends ConsumerWidget {
                           color: Colors.red.shade700,
                         ),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 답변 (답변이 있는 경우)
+          if (report.answer != null && report.answer!.isNotEmpty) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '답변',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      report.answer!,
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
