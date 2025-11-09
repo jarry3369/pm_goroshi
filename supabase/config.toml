@@ -308,7 +308,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.report-handler]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/report-handler/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -330,7 +330,7 @@ entrypoint = "./functions/send-notification/index.ts"
 
 [functions.discord-notification]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/discord-notification/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -341,7 +341,7 @@ entrypoint = "./functions/discord-notification/index.ts"
 
 [functions.sms-serve]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/sms-serve/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -352,7 +352,7 @@ entrypoint = "./functions/sms-serve/index.ts"
 
 [functions.report-submit]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/report-submit/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
