@@ -5,6 +5,7 @@ import {
   jsonErr,
   methodNotAllowed,
   logDebug,
+  badRequest,
 } from "../_shared/utils.ts";
 
 const supabase = createClient(
@@ -18,7 +19,7 @@ serve(async (req) => {
     if (req.method !== "POST") methodNotAllowed();
 
     const { code } = await req.json();
-    if (!code) return jsonErr("code required", 400);
+    if (!code) return badRequest("code required");
 
     // 세션 큐에서 가장 오래된 미매칭 세션 조회
     const { data: session } = await supabase
