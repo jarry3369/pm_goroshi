@@ -1,6 +1,6 @@
 # 클린로드
 
-[![Google Play Store](https://img.shields.io/badge/Google%20Play-클린로드-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.minestroneteam.pmgoroshi)   
+[![Google Play Store](https://img.shields.io/badge/Google%20Play-클린로드-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.minestroneteam.pmgoroshi)  
 방치된 공유 킥보드, 자전거 간단 신고
 
 ## 📱 프로젝트 소개
@@ -31,17 +31,19 @@
 - **신고 유형 선택**: 다양한 불법 주차 유형 분류 (보도, 자전거도로, 횡단보도 등)
 - **신고 내역 조회**: 과거 신고 기록 확인
 - **푸시 알림**: 신고 처리 상태 실시간 알림
-- **킥보드, 자전거 등 공유 모빌리티 통합 지원**
+- **안전신문고 신고 통합 지원**
 
 ## 🛠 기술 스택
 
 ### Frontend (Flutter)
+
 - **Framework**: Flutter 3.7.0+
 - **상태 관리**: Riverpod
 - **라우팅**: GoRouter
 - **UI/UX**: Material Design 3
 
 ### 주요 패키지
+
 - `mobile_scanner`: QR 코드 스캔
 - `flutter_naver_map`: 네이버 지도 연동
 - `geolocator`: 위치 서비스
@@ -50,6 +52,7 @@
 - `supabase_flutter`: 백엔드 서비스
 
 ### Backend
+
 - **Database**: Supabase (PostgreSQL)
 - **Storage**: Supabase Storage
 - **Functions**: Supabase Edge Functions
@@ -68,9 +71,10 @@ lib/
     ├── routes/
     └── widgets/
 ```
+
 ## 📄 버전
 
-현재 버전: **0.1.3+4**
+현재 버전: **0.1.5+6**
 
 ---
 
