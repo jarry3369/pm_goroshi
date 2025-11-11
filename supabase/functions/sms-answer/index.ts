@@ -129,7 +129,7 @@ ${firstAnswer.C_MANAGE_CONTENTS}
       .from("reports")
       .update({
         answer: finalAnswer,
-        processed: firstAnswer.C_MANAGER_TYPE_NM == "수용",
+        processed: true,
       })
       .eq("report_id", reportId);
 
