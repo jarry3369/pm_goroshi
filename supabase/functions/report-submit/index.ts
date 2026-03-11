@@ -8,7 +8,12 @@ import {
   normalizePhone,
   logDebug,
 } from "../_shared/utils.ts";
-import { SAFETYREPORT_BASE_URL, UA } from "../_shared/constants.ts";
+import {
+  newSafetyreportCookieJar,
+  submitSafeReport,
+  verifySms,
+  SafetyreportApiError,
+} from "../_shared/safetyreport_api.ts";
 
 /**
  * (참조) report 테이블 스키마
@@ -71,51 +76,6 @@ function removeNonPrintableChars(str: string): string {
   return str.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
 }
 
-// 쿠키 맵을 http 헤더로 변환
-function cookieHeader(jar: Record<string, string>) {
-  return Object.entries(jar)
-    .map(([k, v]) => `${k}=${v}`)
-    .join("; ");
-}
-// 응답 헤더의 set-cookie를  쿠키 맵에 merge
-function mergeSetCookies(jar: Record<string, string>, res: Response) {
-  const all = res.headers.get("set-cookie");
-  if (!all) return;
-  for (const part of all.split(/,(?=[^ ;]+=)/)) {
-    const first = part.split(";")[0].trim();
-    const eq = first.indexOf("=");
-    if (eq > 0) jar[first.slice(0, eq)] = first.slice(eq + 1);
-  }
-}
-
-async function postForm(
-  url: string,
-  params: URLSearchParams | FormData,
-  jar: Record<string, string>,
-  referer: string = `${SAFETYREPORT_BASE_URL}/`
-): Promise<Response> {
-  const headers: Record<string, string> = {
-    "User-Agent": UA,
-    "X-Requested-With": "XMLHttpRequest",
-    Accept: "*/*",
-    Cookie: cookieHeader(jar),
-    Origin: SAFETYREPORT_BASE_URL,
-    Referer: referer,
-  };
-  if (params instanceof URLSearchParams) {
-    headers["Content-Type"] =
-      "application/x-www-form-urlencoded; charset=UTF-8";
-  }
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: headers,
-    body: params,
-  });
-  mergeSetCookies(jar, res);
-  return res;
-}
-
 async function buildRAddressInfo({
   location,
   latitude,
@@ -130,7 +90,7 @@ async function buildRAddressInfo({
   try {
     const res = await fetch(url, { headers });
     const j = await res.json();
-
+    
     // 가끔씩 도로명 조회 안되는 경우 사용자 입력 주소 및 임의 zipcode로 대체
     const roadAddress = j.documents[0]?.road_address?.address_name || location;
     const zipCode = j.documents[0]?.road_address?.zone_no || "01111";
@@ -164,7 +124,7 @@ async function buildStaticMapUrl(
     if (res.ok && j.documents && j.documents.length > 0) {
       const tmX = j.documents[0].x;
       const tmY = j.documents[0].y;
-
+ 
       const params = new URLSearchParams({
         IW: width.toString(),
         IH: height.toString(),
@@ -178,9 +138,9 @@ async function buildStaticMapUrl(
 
       return `http://map2.daum.net/map/imageservice?${params.toString()}`;
     } else {
-      console.error("failed to transCoord:", j);
-      return "";
-    }
+    console.error("failed to transCoord:", j);
+    return "";
+  }
   } catch (e) {
     console.error("failed to build map url:", e);
     return "";
@@ -317,18 +277,20 @@ function buildForm(
 
 // sms-serve 에서 트리거
 serve(async (req) => {
+  let report: Report | null = null;
+
   try {
     if (req.method !== "POST") return methodNotAllowed();
 
     const { report_id } = await req.json();
     if (!report_id) return badRequest("report_id missing");
 
-    const { data: report, error } = await supabase
+    const { data, error } = await supabase
       .from("reports")
       .select("id, status, sms_req_id, sms_code, content")
       .eq("id", report_id)
       .single();
-
+    report = data;
     if (error || !report) {
       const msg = `report ${report_id} not found`;
       logDebug(msg);
@@ -336,11 +298,7 @@ serve(async (req) => {
     }
     if (!report.sms_req_id || !report.sms_code) {
       const msg = "sms_req_id or sms_code missing";
-      await supabase
-        .from("reports")
-        .update({ status: "failed", error_message: msg })
-        .eq("id", report.id);
-
+      await markReportFailed(report.id, msg);
       logDebug(msg);
       return jsonErr(msg, 400);
     }
@@ -354,7 +312,7 @@ serve(async (req) => {
     };
 
     // 주소 정보 및 static 지도 이미지 생성
-    let addressInfo = { roadAddress: "", zipCode: "" };
+     let addressInfo = { roadAddress: "", zipCode: "" };
     if (enrichedContent.latitude && enrichedContent.longitude) {
       addressInfo = await buildRAddressInfo(enrichedContent);
     }
@@ -366,45 +324,21 @@ serve(async (req) => {
       );
     }
 
-    // SMS 인증 -> 리포트 제출 흐름까지 세션 유지를 위한 쿠키 생성
-    const jar: Record<string, string> = {};
-    const warmup = await fetch(`${SAFETYREPORT_BASE_URL}/`, {
-      headers: { "User-Agent": UA },
-    });
-    mergeSetCookies(jar, warmup);
-    logDebug("cookie f:", jar);
-
     const PHONE = normalizePhone(
       Deno.env.get("AUTHENTICATION_PHONE_NUMBER") || ""
     );
-    if (!PHONE.plain)
+    if (!PHONE.plain) {
       return jsonErr("env AUTHENTICATION_PHONE_NUMBER not set", 500);
-
-    const crftcReqBody = new URLSearchParams();
-    crftcReqBody.set("SMS_CRTFC_ID", report.sms_req_id);
-    crftcReqBody.set("SMS_CRTFC_NO", report.sms_code);
-    crftcReqBody.set("SMS_CRTFC_TY", "01");
-    crftcReqBody.set("MOBLPHON_NO", PHONE.plain);
-
-    const r1 = await postForm(
-      `${SAFETYREPORT_BASE_URL}/api/v1/portal/common/sms/smsCrtfcTy`,
-      crftcReqBody,
-      jar
-    );
-    const j1 = await r1.json().catch(() => ({}));
-
-    if (!r1.ok || (j1?.result && j1.result !== "success")) {
-      const msg = `sms code authentication failed: ${JSON.stringify(
-        j1 || r1.statusText
-      )}`;
-      await supabase
-        .from("reports")
-        .update({ status: "failed", error_message: msg })
-        .eq("id", report.id);
-
-      logDebug(msg);
-      return jsonErr(msg, 400, { step: "verify", status: r1.status, body: j1 });
     }
+
+    // warmup fetch 제거, verify -> submit 동안 같은 raw TLS cookie jar로 유지.
+    const jar = newSafetyreportCookieJar();
+    await verifySms({
+      smsRequestId: report.sms_req_id,
+      smsCode: report.sms_code,
+      phone: PHONE.plain,
+      jar,
+    });
     logDebug("sms code verified");
 
     // raonk 업로더 후킹 실패
@@ -421,51 +355,60 @@ serve(async (req) => {
       addressInfo,
       staticMapUrl
     );
-    logDebug("safereport req params:", params.toString());
 
-    const r2 = await postForm(
-      `${SAFETYREPORT_BASE_URL}/api/v1/portal/safereport/safereport`,
-      params,
-      jar
-    );
-    logDebug("final status:", r2.status);
+    const submitResult = await submitSafeReport(params, jar);
+    const statementNumber = submitResult.data?.STTEMNT_NO ?? null;
+    const submissionDetails = submitResult.data ?? submitResult.response.bodyText;
 
-    const t2 = await r2.text();
-    let j2: any = null;
-    try {
-      j2 = JSON.parse(t2);
-    } catch {
-      // ignore
-    }
+    await supabase
+      .from("reports")
+      .update({
+        status: "submitted",
+        processed: true,
+        report_id: statementNumber,
+      })
+      .eq("id", report.id);
 
-    if (r2.ok && (!j2 || j2?.result === "success")) {
-      const submissionDetails = j2 || t2;
-      await supabase
-        .from("reports")
-        .update({
-          status: "submitted",
-          processed: true,
-          report_id: j2?.STTEMNT_NO,
-        })
-        .eq("id", report.id);
+    return jsonOk({ result: submissionDetails });
+  } catch (e) {
+    if (e instanceof SafetyreportApiError) {
+      if (report?.id) {
+        await markReportFailed(
+          report.id,
+          `${e.message}: ${stringifyErrorBody(e.body)}`,
+        );
+      }
 
-      return jsonOk({ result: submissionDetails });
-    } else {
-      const msg = `failed to report: ${JSON.stringify(j2 || t2)}`;
-      await supabase
-        .from("reports")
-        .update({ status: "failed", error_message: msg })
-        .eq("id", report.id);
-
-      logDebug(msg);
-      return jsonErr(msg, 502, {
-        step: "submit",
-        status: r2.status,
-        body: j2 || t2,
+      const status = e.step === "sms.verify" ? 400 : 502;
+      logDebug("safetyreport submit flow failed", {
+        report_id: report?.id,
+        step: e.step,
+        status: e.status,
+      });
+      return jsonErr(e.message, status, {
+        step: e.step,
+        status: e.status,
+        body: e.body,
       });
     }
-  } catch (e) {
     logDebug("Function error", e);
     return jsonErr(e instanceof Error ? e.message : String(e), 500);
   }
 });
+
+async function markReportFailed(reportId: string, errorMessage: string): Promise<void> {
+  await supabase
+    .from("reports")
+    .update({ status: "failed", error_message: errorMessage })
+    .eq("id", reportId);
+}
+
+function stringifyErrorBody(body: unknown): string {
+  if (typeof body === "string") return body;
+
+  try {
+    return JSON.stringify(body);
+  } catch {
+    return String(body);
+  }
+}
