@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_controller.dart';
-import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/domain/entities/violation_type.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -491,7 +489,9 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
 
                         // 위치 갱신 후 지도 리빌드
                         controller.refreshLocation().then((_) {
-                          _rebuildMapIfNeeded();
+                          if (mounted) {
+                            _rebuildMapIfNeeded();
+                          }
                         });
                       },
               icon: Icon(
@@ -530,7 +530,18 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
             borderRadius: BorderRadius.circular(12),
             child:
                 state.position == null
-                    ? const Center(child: Text('위치 정보 로딩 중...'))
+                    ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          state.isLocationLoading
+                              ? '위치 정보 로딩 중...'
+                              : '위치 정보를 가져오지 못했습니다.\n기기 위치 설정과 권한을 확인한 뒤 새로고침하세요.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                      ),
+                    )
                     : _cachedMapWidget,
           ),
         ),
@@ -1076,8 +1087,8 @@ class SubmitButtonSection extends ConsumerWidget {
                   final result = await controller.submitForm();
 
                   if (context.mounted) {
-                    // 성공/실패 여부와 상관없이 Completion 페이지로 이동
-                    context.go(
+                    // /scan 셸을 유지한 채 /form만 완료 화면으로 교체한다.
+                    context.pushReplacement(
                       '/completion',
                       extra: {
                         'isSuccess': result.$1,

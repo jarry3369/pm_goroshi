@@ -20,6 +20,7 @@ class QRScanController extends _$QRScanController {
   StreamSubscription<ScanResult?>? _subscription;
   late QRScannerService _scannerService;
   bool _processingResult = false; // 결과 처리 중 플래그 추가
+  bool _initializing = false;
 
   @override
   FutureOr<void> build() {
@@ -35,6 +36,12 @@ class QRScanController extends _$QRScanController {
 
   Future<void> initialize() async {
     debugPrint('QRScanController - 스캐너 초기화 시작');
+    if (_initializing) {
+      debugPrint('QRScanController - 이미 초기화 중이어서 중복 요청 무시');
+      return;
+    }
+
+    _initializing = true;
     _processingResult = false; // 초기화 시 처리 플래그 리셋
 
     try {
@@ -45,13 +52,10 @@ class QRScanController extends _$QRScanController {
         _subscription = null;
       }
 
-      // 스캐너가 실행 중이면 중지
-      if (_scannerService.isScanning) {
-        debugPrint('QRScanController - 실행 중인 스캐너 중지');
-        await _scannerService.stopScanner();
-        // 스캐너 중지 후 약간의 지연 시간 추가
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
+      debugPrint('QRScanController - 이전 스캐너 세션 중지');
+      await _scannerService.stopScanner();
+      // 스캐너 중지 후 약간의 지연 시간 추가
+      await Future.delayed(const Duration(milliseconds: 300));
 
       debugPrint('QRScanController - 스캐너 시작 시도');
 
@@ -78,7 +82,13 @@ class QRScanController extends _$QRScanController {
     } catch (e) {
       debugPrint('QRScanController - 스캐너 초기화 중 오류: $e');
       state = AsyncValue.error(e, StackTrace.current);
+    } finally {
+      _initializing = false;
     }
+  }
+
+  void showInitializationError(Object error, StackTrace stackTrace) {
+    state = AsyncValue.error(error, stackTrace);
   }
 
   void toggleFlash() async {
@@ -144,7 +154,7 @@ class QRScanController extends _$QRScanController {
   }
 
   /// 스캐너 상태 초기화
-  void resetScanner() async {
+  Future<void> resetScanner() async {
     debugPrint('QRScanController - resetScanner: 스캐너 상태 초기화');
     _processingResult = false; // 처리 플래그 리셋
 
@@ -156,11 +166,8 @@ class QRScanController extends _$QRScanController {
         debugPrint('QRScanController - 스캔 구독 취소됨');
       }
 
-      // 스캐너가 실행 중이면 중지
-      if (_scannerService.isScanning) {
-        await _scannerService.stopScanner();
-        debugPrint('QRScanController - 스캐너 중지됨');
-      }
+      await _scannerService.stopScanner();
+      debugPrint('QRScanController - 스캐너 중지됨');
     } catch (e) {
       debugPrint('QRScanController - 스캐너 초기화 중 오류: $e');
     }

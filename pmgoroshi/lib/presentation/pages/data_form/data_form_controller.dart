@@ -3,11 +3,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pmgoroshi/domain/entities/form_data.dart';
 import 'package:pmgoroshi/data/services/image_picker_service_impl.dart';
 import 'package:pmgoroshi/presentation/pages/data_form/data_form_state.dart';
-import 'package:pmgoroshi/data/services/api_service.dart';
 import 'package:pmgoroshi/data/services/location_service.dart';
 import 'package:pmgoroshi/domain/entities/violation_type.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:pmgoroshi/data/services/supabase_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -61,10 +58,14 @@ class DataFormController extends _$DataFormController {
   // 현재 위치 가져오기
   Future<void> _fetchCurrentLocation() async {
     try {
+      debugPrint('DataFormController - 현재 위치 조회 시작');
       final locationService = ref.read(locationServiceProvider);
       final position = await locationService.getCurrentPosition();
 
       if (position != null) {
+        debugPrint(
+          'DataFormController - 위치 조회 성공: ${position.latitude}, ${position.longitude}',
+        );
         final address = await locationService.getFormattedAddress(position);
 
         // 위치 정보가 변경된 경우에만 상태 업데이트
@@ -81,12 +82,14 @@ class DataFormController extends _$DataFormController {
           state = state.copyWith(isLocationLoading: false);
         }
       } else {
+        debugPrint('DataFormController - 위치 조회 실패: position=null');
         state = state.copyWith(
           isLocationLoading: false,
           errorMessage: '위치 정보를 가져올 수 없습니다. 위치 권한을 확인해주세요.',
         );
       }
     } catch (e) {
+      debugPrint('DataFormController - 위치 조회 오류: $e');
       state = state.copyWith(
         isLocationLoading: false,
         errorMessage: '위치 정보를 가져오는 중 오류가 발생했습니다: ${e.toString()}',
@@ -103,10 +106,14 @@ class DataFormController extends _$DataFormController {
     state = state.copyWith(isLocationLoading: true, errorMessage: null);
 
     try {
+      debugPrint('DataFormController - 위치 새로고침 시작');
       final locationService = ref.read(locationServiceProvider);
       final position = await locationService.getCurrentPosition();
 
       if (position != null) {
+        debugPrint(
+          'DataFormController - 위치 새로고침 성공: ${position.latitude}, ${position.longitude}',
+        );
         final address = await locationService.getFormattedAddress(position);
 
         // 위치 정보가 변경된 경우에만 모든 상태 업데이트
@@ -124,6 +131,7 @@ class DataFormController extends _$DataFormController {
         }
       } else {
         // 위치 정보를 가져오지 못한 경우
+        debugPrint('DataFormController - 위치 새로고침 실패: position=null');
         state = state.copyWith(
           isLocationLoading: false,
           errorMessage: '위치 정보를 가져올 수 없습니다. 위치 권한을 확인해주세요.',
@@ -131,6 +139,7 @@ class DataFormController extends _$DataFormController {
       }
     } catch (e) {
       // 오류 발생 시
+      debugPrint('DataFormController - 위치 새로고침 오류: $e');
       state = state.copyWith(
         isLocationLoading: false,
         errorMessage: '위치 정보를 가져오는 중 오류가 발생했습니다: ${e.toString()}',

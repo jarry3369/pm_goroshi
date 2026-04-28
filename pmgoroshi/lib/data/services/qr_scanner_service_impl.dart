@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pmgoroshi/domain/entities/scan_result.dart';
@@ -17,6 +18,7 @@ class QRScannerServiceImpl implements QRScannerService {
 
   final AppPermissionHandler permissionHandler;
   final MobileScannerController _controller = MobileScannerController(
+    autoStart: false,
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
     torchEnabled: false,
@@ -42,45 +44,84 @@ class QRScannerServiceImpl implements QRScannerService {
   @override
   Stream<ScanResult?> get scanResultStream => _scanResultController.stream;
 
-  @override
+  MobileScannerController get controller => _controller;
+
   Future<bool> startScan() async {
-    try {
-      // 이미 스캔 중이면 재시작할 필요 없음
-      if (_isScanning) {
+    // 이미 스캔 중이면 재시작할 필요 없음
+    if (_isScanning) {
+      final scannerState = _controller.value;
+      if (scannerState.isRunning && scannerState.error == null) {
         return true;
       }
 
-      // 권한 체크
-      final hasPermission = await permissionHandler.checkPermission(
-        Permission.camera,
-      );
-
-      if (!hasPermission) {
-        final status = await permissionHandler.requestCameraPermission();
-        if (status != PermissionStatus.granted) {
-          throw PlatformException(
-            code: 'PERMISSION_DENIED',
-            message: '카메라 권한이 필요합니다',
-          );
-        }
-      }
-
-      await _controller.start();
-      _isScanning = true;
-      return true;
-    } catch (e) {
       _isScanning = false;
-      return false;
     }
+
+    // 권한 체크
+    final hasPermission = await permissionHandler.checkPermission(
+      Permission.camera,
+    );
+
+    if (!hasPermission) {
+      final status = await permissionHandler.requestCameraPermission();
+      if (status != PermissionStatus.granted) {
+        throw PlatformException(
+          code: 'PERMISSION_DENIED',
+          message: '카메라 권한이 필요합니다',
+        );
+      }
+    }
+
+    try {
+      await _controller.start();
+    } on MobileScannerException catch (e) {
+      _isScanning = false;
+      await stopScan();
+      throw PlatformException(
+        code: e.errorCode.name,
+        message: e.errorDetails?.message ?? e.errorCode.message,
+        details: e.toString(),
+      );
+    }
+
+    final scannerState = _controller.value;
+    debugPrint(
+      'QRScannerService - started: '
+      'isInitialized=${scannerState.isInitialized}, '
+      'isRunning=${scannerState.isRunning}, '
+      'size=${scannerState.size}, '
+      'cameraDirection=${scannerState.cameraDirection}, '
+      'availableCameras=${scannerState.availableCameras}, '
+      'error=${scannerState.error}',
+    );
+    final scannerError = scannerState.error;
+    if (!scannerState.isRunning ||
+        scannerState.size.isEmpty ||
+        scannerError != null) {
+      _isScanning = false;
+      await _controller.stop();
+      throw PlatformException(
+        code:
+            scannerError?.errorCode.name ??
+            (scannerState.size.isEmpty
+                ? 'SCANNER_EMPTY_PREVIEW'
+                : 'SCANNER_NOT_RUNNING'),
+        message:
+            scannerError?.errorDetails?.message ??
+            scannerError?.errorCode.message ??
+            (scannerState.size.isEmpty
+                ? '카메라는 열렸지만 프리뷰 크기를 가져오지 못했습니다.'
+                : '카메라를 시작하지 못했습니다.'),
+        details: scannerError?.toString(),
+      );
+    }
+
+    _isScanning = true;
+    return true;
   }
 
-  @override
   Future<bool> stopScan() async {
     try {
-      if (!_isScanning) {
-        return true;
-      }
-      
       await _controller.stop();
       _isScanning = false;
       return true;
@@ -91,7 +132,13 @@ class QRScannerServiceImpl implements QRScannerService {
 
   @override
   Future<void> startScanner() async {
-    await startScan();
+    final started = await startScan();
+    if (!started) {
+      throw PlatformException(
+        code: 'SCANNER_START_FAILED',
+        message: 'QR scanner could not be started',
+      );
+    }
   }
 
   @override

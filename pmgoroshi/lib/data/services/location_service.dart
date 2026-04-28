@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -22,7 +23,7 @@ class LocationServiceImpl implements LocationService {
 
   // 진행 중인 위치 정보 요청을 캐싱하여 동일한 요청이 중복 발생하지 않도록 함
   Future<Position?>? _pendingPositionRequest;
-  Map<String, Future<String?>> _pendingAddressRequests = {};
+  final Map<String, Future<String?>> _pendingAddressRequests = {};
 
   // 캐시 유효 시간 (15초로 증가)
   static const _cacheValidDuration = Duration(seconds: 15);
@@ -61,6 +62,7 @@ class LocationServiceImpl implements LocationService {
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        debugPrint('LocationService - 위치 서비스가 비활성화됨');
         return null;
       }
 
@@ -69,18 +71,20 @@ class LocationServiceImpl implements LocationService {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
+          debugPrint('LocationService - 위치 권한 거부됨');
           return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
+        debugPrint('LocationService - 위치 권한 영구 거부됨');
         return null;
       }
 
-      // 현재 위치 가져오기 - 더 빠른 응답을 위해 정확도 낮춤
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low, // 정확도를 low로 낮춤
-        timeLimit: const Duration(seconds: 4), // 시간 제한 줄임
+        desiredAccuracy: LocationAccuracy.medium,
+        forceAndroidLocationManager: kDebugMode,
+        timeLimit: const Duration(seconds: 10),
       );
 
       // 위치 정보 캐싱
@@ -89,18 +93,25 @@ class LocationServiceImpl implements LocationService {
 
       return position;
     } catch (e) {
+      debugPrint('LocationService - 현재 위치 조회 실패, 마지막 위치 시도: $e');
       // 제한 시간 초과 또는 오류 발생 시 마지막으로 알려진 위치 반환
       try {
-        final position = await Geolocator.getLastKnownPosition();
+        final position = await Geolocator.getLastKnownPosition(
+          forceAndroidLocationManager: kDebugMode,
+        );
         if (position != null) {
           // 위치 정보 캐싱
           _lastPosition = position;
           _lastFetchTime = DateTime.now();
+          debugPrint(
+            'LocationService - 마지막 위치 사용: ${position.latitude}, ${position.longitude}',
+          );
+          return position;
         }
-        return position;
       } catch (e) {
-        return null;
+        debugPrint('LocationService - 마지막 위치 조회 실패: $e');
       }
+      return null;
     }
   }
 
@@ -186,7 +197,7 @@ class LocationServiceImpl implements LocationService {
         return _lastAddress;
       }
     } catch (e) {
-      print('주소 변환 오류: $e');
+      debugPrint('주소 변환 오류: $e');
     }
 
     // 주소 변환 실패 시 좌표 반환

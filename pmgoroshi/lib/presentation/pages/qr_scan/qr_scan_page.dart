@@ -1,19 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:pmgoroshi/domain/entities/scan_result.dart';
 import 'package:pmgoroshi/data/services/qr_scanner_service_impl.dart';
 import 'package:pmgoroshi/presentation/pages/qr_scan/qr_scan_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pmgoroshi/core/permissions/permission_handler.dart';
-import 'package:pmgoroshi/data/services/location_service.dart';
-import 'package:pmgoroshi/data/services/supabase_service.dart';
 import 'package:pmgoroshi/main.dart' show routeObserver;
 import 'package:pmgoroshi/presentation/widgets/banner_carousel.dart';
 import 'package:pmgoroshi/presentation/controllers/banner_provider.dart';
-import 'package:pmgoroshi/presentation/pages/data_form/data_form_page.dart';
 
 class QRScanPage extends ConsumerStatefulWidget {
   const QRScanPage({super.key});
@@ -26,6 +22,9 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     with WidgetsBindingObserver, RouteAware {
   bool _isActive = false; // 페이지가 현재 활성 상태인지 추적
   bool _bannerShown = false; // 배너가 이미 표시되었는지 여부
+  bool _isInitializingScanner = false;
+  bool _isOpeningAppSettings = false;
+  int _scannerInitGeneration = 0;
 
   @override
   void initState() {
@@ -39,10 +38,15 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
     // 배너 로딩 및 표시 (지연 실행)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bannerGeneration = _scannerInitGeneration;
       debugPrint('QRScanPage - 배너 로딩 시작');
 
       // 데이터 리프레시를 위해 provider를 직접 호출하여 배너 로드
       ref.read(bannerProvider.notifier).refreshBanners().then((_) {
+        if (!mounted || bannerGeneration != _scannerInitGeneration) {
+          return;
+        }
+
         debugPrint('QRScanPage - 배너 리프레시 완료, 배너 표시 시도');
 
         // 배너 모달 직접 표시
@@ -58,7 +62,10 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
               // 약간의 지연 후 모달 표시 (UI가 완전히 그려진 후)
               Future.delayed(const Duration(milliseconds: 500), () {
-                if (_isActive && !_bannerShown) {
+                if (mounted &&
+                    _isActive &&
+                    !_bannerShown &&
+                    bannerGeneration == _scannerInitGeneration) {
                   _bannerShown = true;
                   _showBannerModal(context);
                 }
@@ -90,8 +97,11 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
     // 배너가 아직 표시되지 않았다면 표시
     if (!_bannerShown) {
+      final bannerGeneration = _scannerInitGeneration;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _checkAndShowBanner();
+        if (mounted && bannerGeneration == _scannerInitGeneration) {
+          _checkAndShowBanner();
+        }
       });
     }
   }
@@ -100,6 +110,8 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
   void dispose() {
     debugPrint('QRScanPage - dispose');
     _isActive = false;
+    _scannerInitGeneration++;
+    ref.read(qRScanControllerProvider.notifier).resetScanner();
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -132,17 +144,7 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     setState(() {
       _isActive = false;
     });
-
-    // 스캐너 확실히 중지
-    final scannerService = ref.read(qrScannerServiceProvider);
-
-    // 스캐너가 실행 중이면 강제로 중지
-    if (scannerService.isScanning) {
-      debugPrint('QRScanPage - didPushNext: 실행 중인 스캐너 중지');
-      scannerService.stopScanner().then((_) {
-        debugPrint('QRScanPage - didPushNext: 스캐너 중지 완료');
-      });
-    }
+    _scannerInitGeneration++;
 
     // 컨트롤러 리셋
     ref.read(qRScanControllerProvider.notifier).resetScanner();
@@ -153,6 +155,7 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
   void didPop() {
     debugPrint('QRScanPage - didPop: 페이지 스택에서 제거됨');
     _isActive = false;
+    _scannerInitGeneration++;
   }
 
   @override
@@ -161,7 +164,35 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
     // 앱이 백그라운드에서 포그라운드로 돌아올 때 스캐너 재시작
     if (state == AppLifecycleState.resumed && _isActive) {
       debugPrint('QRScanPage - 앱이 포그라운드로 돌아옴, 스캐너 재시작');
-      _checkPermissionsAndInitialize();
+      if (_isOpeningAppSettings) {
+        _isOpeningAppSettings = false;
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted && _isActive) {
+            _checkPermissionsAndInitialize();
+          }
+        });
+      } else {
+        _checkPermissionsAndInitialize();
+      }
+    }
+  }
+
+  Future<void> _openPermissionSettings() async {
+    _isOpeningAppSettings = true;
+    final opened = await openAppSettings();
+    if (!opened) {
+      _isOpeningAppSettings = false;
+      if (mounted) {
+        ref
+            .read(qRScanControllerProvider.notifier)
+            .showInitializationError(
+              PlatformException(
+                code: 'APP_SETTINGS_OPEN_FAILED',
+                message: '앱 설정 화면을 열지 못했습니다.',
+              ),
+              StackTrace.current,
+            );
+      }
     }
   }
 
@@ -171,7 +202,13 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
       debugPrint('QRScanPage - 페이지가 비활성 상태여서 초기화 중단');
       return;
     }
+    if (_isInitializingScanner) {
+      debugPrint('QRScanPage - 이미 스캐너 초기화 중이어서 중복 요청 무시');
+      return;
+    }
 
+    _isInitializingScanner = true;
+    final initGeneration = _scannerInitGeneration;
     try {
       // 카메라 권한 체크 - 직접 Permission 객체 사용
       debugPrint('QRScanPage - 카메라 권한 확인 시작');
@@ -181,12 +218,14 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
       );
 
       // 권한이 없으면 요청
-      if (!cameraStatus.isGranted) {
+      if (!cameraStatus.isGranted && !cameraStatus.isPermanentlyDenied) {
         debugPrint('QRScanPage - 카메라 권한 요청 시작');
         cameraStatus = await Permission.camera.request();
         debugPrint(
           'QRScanPage - 카메라 권한 요청 결과: $cameraStatus (isGranted: ${cameraStatus.isGranted})',
         );
+      } else if (cameraStatus.isPermanentlyDenied) {
+        debugPrint('QRScanPage - 카메라 권한이 영구 거부되어 설정 화면 안내로 전환');
       }
 
       // 위치 권한 체크 - 직접 Permission 객체 사용
@@ -197,12 +236,14 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
       );
 
       // 필요한 경우 위치 권한 요청
-      if (!locationStatus.isGranted) {
+      if (!locationStatus.isGranted && !locationStatus.isPermanentlyDenied) {
         debugPrint('QRScanPage - 위치 권한 요청 시작');
         locationStatus = await Permission.location.request();
         debugPrint(
           'QRScanPage - 위치 권한 요청 결과: $locationStatus (isGranted: ${locationStatus.isGranted})',
         );
+      } else if (locationStatus.isPermanentlyDenied) {
+        debugPrint('QRScanPage - 위치 권한이 영구 거부되어 요청을 생략');
       }
 
       // 반드시 다시 상태 확인 (최신 상태 반영)
@@ -217,14 +258,25 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
         debugPrint('QRScanPage - 권한 확인 완료, 스캐너 컨트롤러 초기화 시작');
 
         // 스캐너 상태 리셋 먼저 수행 (충돌 방지)
-        ref.read(qRScanControllerProvider.notifier).resetScanner();
+        await ref.read(qRScanControllerProvider.notifier).resetScanner();
         await Future.delayed(const Duration(milliseconds: 300));
+        if (!mounted ||
+            !_isActive ||
+            initGeneration != _scannerInitGeneration) {
+          return;
+        }
 
         // 0.5초 지연 후 초기화 - 더 안정적인 초기화를 위해
         await Future.delayed(const Duration(milliseconds: 500));
-        if (_isActive) {
+        if (mounted && _isActive && initGeneration == _scannerInitGeneration) {
           // 다시 활성 상태 확인
           await ref.read(qRScanControllerProvider.notifier).initialize();
+          if (!mounted ||
+              !_isActive ||
+              initGeneration != _scannerInitGeneration) {
+            await ref.read(qRScanControllerProvider.notifier).resetScanner();
+            return;
+          }
           debugPrint('QRScanPage - 스캐너 컨트롤러 초기화 완료');
 
           // 상태 명시적으로 다시 활성화 (확실히 활성 상태로 만들기)
@@ -239,10 +291,26 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
         }
       } else {
         debugPrint('QRScanPage - 카메라 권한 없음, 스캐너 초기화 불가');
-        // 여기에 사용자에게 권한이 필요하다는 알림 표시 가능
+        throw PlatformException(
+          code:
+              cameraStatus.isPermanentlyDenied
+                  ? 'CAMERA_PERMISSION_PERMANENTLY_DENIED'
+                  : 'CAMERA_PERMISSION_DENIED',
+          message:
+              cameraStatus.isPermanentlyDenied
+                  ? '앱 설정에서 카메라 권한을 허용해야 합니다.'
+                  : '카메라 권한이 필요합니다.',
+        );
       }
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('QRScanPage - 권한 체크 및 초기화 중 오류: $e');
+      if (mounted) {
+        ref
+            .read(qRScanControllerProvider.notifier)
+            .showInitializationError(e, stack);
+      }
+    } finally {
+      _isInitializingScanner = false;
     }
   }
 
@@ -261,13 +329,6 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
         setState(() {
           _isActive = false;
         });
-
-        // 스캐너 중지 확인
-        final scannerService = ref.read(qrScannerServiceProvider);
-        if (scannerService.isScanning) {
-          debugPrint('QRScanPage - 스캐너가 아직 실행 중임, 명시적 중지 시도');
-          scannerService.stopScanner();
-        }
 
         // 컨트롤러 리셋
         ref.read(qRScanControllerProvider.notifier).resetScanner();
@@ -344,107 +405,74 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
   }
 
   Widget _buildScannerView() {
-    final scannerService = ref.watch(qrScannerServiceProvider);
+    final scannerService =
+        ref.watch(qrScannerServiceProvider) as QRScannerServiceImpl;
     final scanControllerState = ref.watch(qRScanControllerProvider);
 
-    return scanControllerState.when(
-      data:
-          (_) => Stack(
-            alignment: Alignment.center,
-            children: [
-              // QR 스캐너 카메라 뷰
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child:
-                      _isActive
-                          ? MobileScanner(
-                            controller: MobileScannerController(
-                              detectionSpeed: DetectionSpeed.normal,
-                              facing: CameraFacing.back,
-                              // 토치는 기본적으로 꺼두기
-                              torchEnabled: false,
-                            ),
-                            onDetect: (capture) {
-                              // MobileScanner에서 QR 코드 감지 시 적극적으로 처리
-                              if (!_isActive) {
-                                debugPrint('QRScanPage - 비활성 상태에서 스캔, 무시');
-                                return;
-                              }
-
-                              final barcodes = capture.barcodes;
-                              if (barcodes.isNotEmpty &&
-                                  barcodes.first.rawValue != null) {
-                                final qrData = barcodes.first.rawValue!;
-                                debugPrint(
-                                  'QRScanPage - onDetect: QR 코드 감지됨: $qrData',
-                                );
-
-                                // 중복 처리 방지를 위해 즉시 비활성화
-                                setState(() {
-                                  _isActive = false;
-                                });
-
-                                // 스캐너 즉시 중지
-                                final scannerService = ref.read(
-                                  qrScannerServiceProvider,
-                                );
-                                scannerService.stopScanner();
-
-                                // QR 값을 ScanResult로 변환하여 직접 스트림에 전달
-                                final result = ScanResult(
-                                  qrData: qrData,
-                                  scanTime: DateTime.now(),
-                                );
-                                ref
-                                    .read(qRScanControllerProvider.notifier)
-                                    .handleRawScanResult(result);
-                              }
-                            },
-                          )
-                          : Container(
-                            color: Colors.black,
-                            child: const Center(
-                              child: Text(
-                                '카메라 초기화 중...',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                ),
-              ),
-
-              // QR 스캔 오버레이
-              Positioned.fill(
-                child: CustomPaint(painter: ScannerOverlayPainter()),
-              ),
-            ],
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // QR 스캐너 카메라 뷰는 에러 상태에서도 트리에 유지한다.
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: MobileScanner(controller: scannerService.controller),
           ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error:
-          (error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 60),
-                const SizedBox(height: 16),
-                Text(
-                  '카메라 접근 권한이 필요합니다',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () async {
-                    await openAppSettings();
-                    _checkPermissionsAndInitialize();
-                  },
-                  child: const Text('권한 설정하기'),
-                ),
-              ],
+        ),
+
+        Positioned.fill(child: CustomPaint(painter: ScannerOverlayPainter())),
+
+        if (!_isActive)
+          Container(
+            color: Colors.black,
+            child: const Center(
+              child: Text(
+                '카메라 초기화 중...',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ),
+
+        scanControllerState.when(
+          data: (_) => const SizedBox.shrink(),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error:
+              (error, stack) => Container(
+                color: Colors.white,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 60,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      error is PlatformException && error.message != null
+                          ? error.message!
+                          : '카메라를 시작하지 못했습니다.',
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _checkPermissionsAndInitialize,
+                      child: const Text('다시 시도'),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _openPermissionSettings,
+                      child: const Text('권한 설정하기'),
+                    ),
+                  ],
+                ),
+              ),
+        ),
+      ],
     );
   }
 
@@ -497,6 +525,8 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
   // 화면 이동을 위한 별도 메서드 (코드 중복 방지)
   void _performNavigation(BuildContext context, String qrData) {
+    final router = GoRouter.of(context);
+
     // 지연 후 페이지 이동 시도 - 지연 시간 증가 (안정화)
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) {
@@ -508,23 +538,10 @@ class _QRScanPageState extends ConsumerState<QRScanPage>
 
       // Go Router 사용
       try {
-        context.push('/form', extra: qrData);
+        router.push('/form', extra: qrData);
         debugPrint('QRScanPage - Go Router로 이동 성공!');
       } catch (e) {
         debugPrint('QRScanPage - Go Router 이동 실패: $e');
-
-        // 실패 시 MaterialPageRoute로 시도
-        try {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DataFormPage(qrData: qrData),
-            ),
-          );
-          debugPrint('QRScanPage - MaterialPageRoute 직접 이동 성공');
-        } catch (e) {
-          debugPrint('QRScanPage - 모든 라우팅 방법 실패: $e');
-        }
       }
     });
   }
