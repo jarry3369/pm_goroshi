@@ -45,6 +45,8 @@ type Payload = Partial<{
   email: string;
 }>;
 
+type DiscordSubmitStatus = "success" | "failed";
+
 const KAKAO_REST_API_KEY = Deno.env.get("KAKAO_REST_API_KEY");
 if (!KAKAO_REST_API_KEY) jsonErr("KAKAO_REST_API_KEY not set", 500);
 
@@ -191,6 +193,100 @@ function buildContentsMessage(p: Payload, filesMetaDates: string[]): string {
   return message;
 }
 
+function truncateText(value: string, maxLength: number): string {
+  return value.length > maxLength
+    ? `${value.slice(0, maxLength - 3)}...`
+    : value;
+}
+
+function safeCodeBlock(value: string): string {
+  return truncateText(value.replaceAll("```", "'''"), 800);
+}
+
+function buildDiscordSubmitMessage(args: {
+  status: DiscordSubmitStatus;
+  reportId?: string | null;
+  report?: Report | null;
+  failureReason?: string;
+  errorMessage?: string;
+  debug?: Record<string, unknown>;
+}): string {
+  const reportId = args.report?.id ?? args.reportId ?? "-";
+  const statusLabel = args.status === "success" ? "Success" : "Failed";
+  const lines = [
+    `Report Submit ${statusLabel}`,
+    `request_id: ${reportId}`,
+  ];
+
+  if (args.status === "failed" && args.failureReason) {
+    lines.push(`failure_reason: ${safeCodeBlock(args.failureReason)}`);
+  }
+  if (args.status === "failed" && args.errorMessage) {
+    lines.push(
+      `error:\n\`\`\`text\n${safeCodeBlock(args.errorMessage)}\n\`\`\``,
+    );
+  }
+  if (args.debug) {
+    lines.push(
+      `debug:\n\`\`\`json\n${safeCodeBlock(JSON.stringify(args.debug, null, 2))}\n\`\`\``,
+    );
+  }
+
+  return truncateText(lines.join("\n"), 1900);
+}
+
+async function notifyDiscordReportSubmit(args: {
+  status: DiscordSubmitStatus;
+  reportId?: string | null;
+  report?: Report | null;
+  failureReason?: string;
+  errorMessage?: string;
+  debug?: Record<string, unknown>;
+}): Promise<void> {
+  const webhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL") ?? "";
+  const reportId = args.report?.id ?? args.reportId ?? "unknown";
+
+  if (!webhookUrl) {
+    logDebug("discord report submit notification skipped", {
+      report_id: reportId,
+      submit_status: args.status,
+      reason: "DISCORD_WEBHOOK_URL not set",
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: buildDiscordSubmitMessage(args),
+      }),
+    });
+
+    if (!response.ok) {
+      logDebug("discord report submit notification failed", {
+        report_id: reportId,
+        submit_status: args.status,
+        webhook_status: response.status,
+        body: truncateText(await response.text(), 500),
+      });
+      return;
+    }
+
+    logDebug("discord report submit notification sent", {
+      report_id: reportId,
+      submit_status: args.status,
+    });
+  } catch (e) {
+    logDebug("discord report submit notification error", {
+      report_id: reportId,
+      submit_status: args.status,
+      error: errorToMessage(e),
+    });
+  }
+}
+
 // safereport form 객체 생성
 function buildForm(
   payload: Payload,
@@ -278,11 +374,13 @@ function buildForm(
 // sms-serve 에서 트리거
 serve(async (req) => {
   let report: Report | null = null;
+  let requestedReportId: string | null = null;
 
   try {
     if (req.method !== "POST") return methodNotAllowed();
 
     const { report_id } = await req.json();
+    requestedReportId = report_id ?? null;
     if (!report_id) return badRequest("report_id missing");
 
     const { data, error } = await supabase
@@ -294,12 +392,24 @@ serve(async (req) => {
     if (error || !report) {
       const msg = `report ${report_id} not found`;
       logDebug(msg);
+      await notifyDiscordReportSubmit({
+        status: "failed",
+        reportId: report_id,
+        failureReason: msg,
+        debug: { stage: "report.lookup" },
+      });
       return jsonErr(msg, 404);
     }
     if (!report.sms_req_id || !report.sms_code) {
       const msg = "sms_req_id or sms_code missing";
       await markReportFailed(report.id, msg);
       logDebug(msg);
+      await notifyDiscordReportSubmit({
+        status: "failed",
+        report,
+        failureReason: msg,
+        debug: { stage: "report.precondition" },
+      });
       return jsonErr(msg, 400);
     }
 
@@ -312,7 +422,7 @@ serve(async (req) => {
     };
 
     // 주소 정보 및 static 지도 이미지 생성
-     let addressInfo = { roadAddress: "", zipCode: "" };
+    let addressInfo = { roadAddress: "", zipCode: "" };
     if (enrichedContent.latitude && enrichedContent.longitude) {
       addressInfo = await buildRAddressInfo(enrichedContent);
     }
@@ -328,6 +438,12 @@ serve(async (req) => {
       Deno.env.get("AUTHENTICATION_PHONE_NUMBER") || ""
     );
     if (!PHONE.plain) {
+      await notifyDiscordReportSubmit({
+        status: "failed",
+        report,
+        failureReason: "env AUTHENTICATION_PHONE_NUMBER not set",
+        debug: { stage: "env.validation" },
+      });
       return jsonErr("env AUTHENTICATION_PHONE_NUMBER not set", 500);
     }
 
@@ -369,13 +485,24 @@ serve(async (req) => {
       })
       .eq("id", report.id);
 
+    await notifyDiscordReportSubmit({
+      status: "success",
+      report,
+      debug: {
+        stage: "report.submit",
+        statement_number: statementNumber,
+        safetyreport_result: submitResult.data?.result ?? null,
+      },
+    });
+
     return jsonOk({ result: submissionDetails });
   } catch (e) {
     if (e instanceof SafetyreportApiError) {
+      const errorMessage = `${e.message}: ${stringifyErrorBody(e.body)}`;
       if (report?.id) {
         await markReportFailed(
           report.id,
-          `${e.message}: ${stringifyErrorBody(e.body)}`,
+          errorMessage,
         );
       }
 
@@ -385,6 +512,18 @@ serve(async (req) => {
         step: e.step,
         status: e.status,
       });
+      await notifyDiscordReportSubmit({
+        status: "failed",
+        reportId: requestedReportId,
+        report,
+        failureReason: e.message,
+        errorMessage: stringifyErrorBody(e.body),
+        debug: {
+          stage: "safetyreport.api",
+          step: e.step,
+          safetyreport_status: e.status ?? null,
+        },
+      });
       return jsonErr(e.message, status, {
         step: e.step,
         status: e.status,
@@ -392,11 +531,22 @@ serve(async (req) => {
       });
     }
     logDebug("Function error", e);
+    await notifyDiscordReportSubmit({
+      status: "failed",
+      reportId: requestedReportId,
+      report,
+      failureReason: "Function error",
+      errorMessage: errorToMessage(e),
+      debug: { stage: "function.exception" },
+    });
     return jsonErr(e instanceof Error ? e.message : String(e), 500);
   }
 });
 
-async function markReportFailed(reportId: string, errorMessage: string): Promise<void> {
+async function markReportFailed(
+  reportId: string,
+  errorMessage: string,
+): Promise<void> {
   await supabase
     .from("reports")
     .update({ status: "failed", error_message: errorMessage })
@@ -407,8 +557,13 @@ function stringifyErrorBody(body: unknown): string {
   if (typeof body === "string") return body;
 
   try {
-    return JSON.stringify(body);
+    return JSON.stringify(body) ?? String(body);
   } catch {
     return String(body);
   }
+}
+
+function errorToMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return stringifyErrorBody(error);
 }
