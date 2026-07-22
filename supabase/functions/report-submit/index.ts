@@ -94,7 +94,8 @@ async function buildRAddressInfo({
     const j = await res.json();
     
     // 가끔씩 도로명 조회 안되는 경우 사용자 입력 주소 및 임의 zipcode로 대체
-    const roadAddress = j.documents[0]?.road_address?.address_name || location;
+    const roadAddress = j.documents[0]?.road_address?.address_name||
+      j.documents[0]?.address?.address_name || location;
     const zipCode = j.documents[0]?.road_address?.zone_no || "01111";
 
     return { roadAddress, zipCode };
